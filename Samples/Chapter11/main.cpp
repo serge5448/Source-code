@@ -1,0 +1,347 @@
+//===============================================================================
+//
+// Microsoft Press
+// C++ AMP: Accelerated Massive Parallelism with Microsoft Visual C++
+//
+//===============================================================================
+// Copyright (c) 2012 Ade Miller & Kate Gregory.  All rights reserved.
+// This code released under the terms of the 
+// Microsoft Public License (Ms-PL), http://ampbook.codeplex.com/license.
+//
+// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
+// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
+// PARTICULAR PURPOSE.
+//===============================================================================
+
+#include <amp.h>
+#include <amp_graphics.h>
+#include <vector>
+#include <array>
+#include <iostream>
+#include <d3d11.h>
+#include <atlbase.h>
+#include <assert.h>
+
+#include "AmpStreamUtils.h"
+#include "AmpVectorUtils.h"
+
+using namespace concurrency;
+using namespace concurrency::graphics;
+using namespace concurrency::graphics::direct3d;
+using namespace concurrency::direct3d;
+
+void NormAndUnorm();
+void ShortVectors();
+void TextureCopy();
+void TextureReading();
+void TextureReadingChars();
+void TextureWriting();
+void TextureReadingAndWriting();
+void TextureReadingAndWritingWithViews();
+void InteropFromD3D();
+void InteropToD3D();
+
+int main()
+{
+#ifndef _DEBUG
+    accelerator defaultDevice;
+    std::wcout << L" Using device : " << defaultDevice.get_description() << std::endl;
+    if (defaultDevice == accelerator(accelerator::direct3d_ref))
+        std::wcout << " WARNING!! No C++ AMP hardware accelerator detected, using the REF accelerator." << std::endl << 
+            "To see better performance run on C++ AMP\ncapable hardware." << std::endl;
+#endif
+
+    NormAndUnorm();
+    ShortVectors();
+    TextureCopy();
+    TextureReading();
+    TextureReadingChars();
+    TextureWriting();
+    TextureReadingAndWriting();
+    TextureReadingAndWritingWithViews();
+    InteropFromD3D();
+    InteropToD3D();
+    return 0;
+}
+
+void NormAndUnorm()
+{
+    unorm val1;
+    std::wcout << "val1 = " << val1 << std::endl;
+    norm val2(2.0f);
+    std::wcout << "val2 = " << val2 << std::endl;
+    unorm val3(-2.0f);
+    std::wcout << "val3 = " << val3 << std::endl;
+    unorm val4(2u);
+    std::wcout << "val4 = " << val4 << std::endl;
+    float val5 = norm(0.25f) + unorm(1.5f) ;
+    std::wcout << "val5 = " << val5 << std::endl;
+    auto val6 = -norm(0.25f);
+    std::wcout << "val6 = " << val6 << std::endl;
+    auto val7 = -unorm(0.25f);
+    std::wcout << "val7 = " << val7 << std::endl;
+}
+
+void ShortVectors()
+{
+    //  Construction
+
+    float_3 vec1;
+    float_3 vec2(1.0f);
+    float_3 vec3(1.0f, 2.0f, 3.0f);
+
+    //  Swizzling
+
+    int_4 vec4(1, 2, 3, 4);
+    std::wcout << "vec4.x = " << vec4.x << std::endl;
+    int_2 vec5 = vec4.br;
+    std::wcout << "vec4.br = " << vec5 << std::endl;
+
+    //  Template metaprogramming
+
+    double_2 vec6(1.0);
+    std::wcout << "length(vec6) = " << length(vec6) << std::endl;
+
+    int vec7(2);
+    std::wcout << "length(vec7) = " << length(vec7) << std::endl;
+
+    std::wcout << "length(vec4) = " << length(vec4) << std::endl;
+    std::wcout << "length(vec5) = " << length(vec5) << std::endl;
+}
+
+void TextureCopy()
+{
+    const int cols = 32;
+    const int rows = 64;
+    std::vector<uint> uintData((rows * cols), 1);
+
+    texture<uint, 2> text1(rows, cols, uintData.cbegin(), uintData.cend());
+
+    uint bitsPerElement = 8u;
+    uint dataSize = rows * cols;
+    std::vector<char> byteData((rows * cols), 1);
+    texture<uint, 2> text2(rows, cols, byteData.data(), dataSize, bitsPerElement);
+
+    texture<uint, 2> text3(rows, cols, bitsPerElement);
+    copy(uintData.data(), dataSize, text3);
+
+    writeonly_texture_view<uint, 2> textVw3(text3);
+    copy(uintData.data(), dataSize, textVw3);
+
+    copy(text3, byteData.data(), dataSize);
+
+    texture<uint, 2> text4(rows, cols, bitsPerElement);
+    text3.copy_to(text4);
+
+    //  Asynchronous copy
+
+    completion_future copyFut = copy_async(text3, byteData.data(), dataSize);
+    
+    copyFut.then([=](){ std::wcout << "Copy complete" << std::endl; });
+
+    copyFut.wait();
+    std::wcout << "Copy complete" << std::endl;
+}
+
+void TextureReading()
+{
+    const int cols = 32;
+    const int rows = 64;
+    std::vector<int> input((rows * cols), 1);
+    
+    const texture<int, 2> inputTx(rows, cols, input.cbegin(), input.cend());
+    //const texture<int, 2> inputTx(rows, cols, accelerator(accelerator::default_accelerator).default_view);
+    //const texture<unorm, 2> inputTx(rows, cols, 8u);
+    std::vector<int> output((rows * cols), 0);
+    array_view<int, 2> outputAv(rows, cols, output);
+    outputAv.discard_data();
+    
+    parallel_for_each(outputAv.extent, [&inputTx, outputAv](index<2> idx) restrict(amp)
+    {
+        outputAv[idx] = inputTx[idx];                   // subscript [index<2>] operator
+        outputAv[idx] = inputTx(idx);                   // function (index<2>) operator 
+        outputAv[idx] = inputTx.get(idx);               // get(index<2>) method     
+        outputAv[idx] = inputTx(idx[0], idx[1]);        // function (int, int) operator 
+    });
+
+    std::wcout << "extent:      (" << inputTx.extent[0] << ", " << inputTx.extent[1] << ")" << std::endl;
+    std::wcout << "size:        " << inputTx.data_length << std::endl;
+    std::wcout << "BPSE:        " << inputTx.bits_per_scalar_element << std::endl;
+    std::wcout << "accelerator: " << inputTx.accelerator_view.accelerator.description << std::endl;
+}
+
+void TextureReadingChars()
+{
+    const UINT bitsPerElement = 8u;
+    const int size = 1024;
+    std::vector<char> input(size, 'a');
+
+    const texture<int, 1> inputTx(size, input.data(), size, bitsPerElement);
+    std::vector<int> output(size, 0);
+    array_view<int, 1> outputAv(size, output);
+    outputAv.discard_data();
+
+    parallel_for_each(outputAv.extent, [&inputTx, outputAv](index<1> idx) restrict(amp)
+    {
+        int element = inputTx[idx];
+        outputAv[idx] = element; // ... Calculate based on 8 bit element value holding a char value
+    });
+}
+
+void TextureWriting()
+{
+    const int cols = 32;
+    const int rows = 64;
+    std::vector<int> input((rows * cols), 1);
+
+    texture<int, 2> outputTx(rows, cols, input.cbegin(), input.cend());
+    array_view<int, 2> inputAv(rows, cols, input);
+
+    parallel_for_each(outputTx.extent, [inputAv, &outputTx](index<2> idx) restrict(amp)
+    {
+        outputTx.set(idx, inputAv[idx]);
+    });
+}
+
+void TextureReadingAndWriting()
+{
+    const int cols = 32;
+    const int rows = 64;
+    std::vector<int> input((rows * cols), 1);
+
+    texture<int, 2> outputTx(rows, cols, input.cbegin(), input.cend());
+    parallel_for_each(outputTx.extent, [&outputTx](index<2> idx) restrict(amp)
+    {
+        outputTx.set(idx, outputTx[idx] + 1);
+    });
+
+    parallel_for_each(outputTx.extent, [&outputTx](index<2> idx) restrict(amp)
+    {
+        writeonly_texture_view<int, 2> outputTxVw(outputTx);
+        outputTxVw.set(idx, outputTx[idx] + 1);
+    });
+}
+
+void TextureReadingAndWritingWithViews()
+{
+    const int cols = 32;
+    const int rows = 64;
+
+    texture<int_2, 2> text1(rows, cols); 
+    writeonly_texture_view<int_2, 2> textVw(text1); 
+    parallel_for_each(textVw.extent, [textVw] (index<2> idx) restrict(amp) 
+    {
+        textVw.set(idx, int_2(1, 1)); 
+    });
+}
+
+void InteropFromD3D()
+{ 
+    //  Get a D3D device from an accelerator_view
+
+    HRESULT hr = S_OK;
+    CComPtr<ID3D11Device> device;
+    IUnknown* unkDev = get_device(accelerator(accelerator::default_accelerator).default_view);
+    hr = unkDev->QueryInterface(__uuidof(ID3D11Device), reinterpret_cast<LPVOID*>(&device));   
+    assert(SUCCEEDED(hr));
+
+    //  Get a D3D buffer from an array
+
+    array<int, 1> arr(1024);
+    CComPtr<ID3D11Buffer> buffer;
+    IUnknown* unkBuf = get_buffer(arr);
+    hr = unkBuf->QueryInterface(__uuidof(ID3D11Buffer), reinterpret_cast<LPVOID*>(&buffer));   
+    assert(SUCCEEDED(hr));
+
+    //  Get a D3D texture resource from a texture
+
+    texture<int, 2> text(100, 100);
+    CComPtr<ID3D11Buffer> texture;
+    IUnknown* unkRes = get_texture(text); // concurrency::graphics::direct3d 
+    hr = unkBuf->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID*>(&texture));   
+    assert(SUCCEEDED(hr));
+}
+
+void InteropToD3D()
+{
+    //  Create an accelerator_view from a D3D device.
+
+    HRESULT hr = S_OK;
+    UINT createDeviceFlags = 0;
+#ifdef _DEBUG
+    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+    std::array<D3D_FEATURE_LEVEL, 1> featureLevels = { D3D_FEATURE_LEVEL_11_0 };
+    
+    CComPtr<ID3D11Device> device;
+    D3D_FEATURE_LEVEL featureLevel;
+    CComPtr<ID3D11DeviceContext> immediateContext;
+
+    hr = D3D11CreateDevice(nullptr /* default adapter */,
+        D3D_DRIVER_TYPE_HARDWARE,
+        nullptr /* No software rasterizer */,
+        createDeviceFlags,
+        featureLevels.data(),
+        UINT(featureLevels.size()),
+        D3D11_SDK_VERSION,
+        &device,
+        &featureLevel,
+        &immediateContext);
+    assert(SUCCEEDED(hr));
+
+    accelerator_view dxView = create_accelerator_view(device);
+    std::wcout << "Created accelerator_view on " << dxView.accelerator.description << std::endl;
+
+    //  Create an array from a D3D buffer
+
+    hr = S_OK; 
+    UINT bufferSize = 1024;
+    D3D11_BUFFER_DESC bufferDesc =
+    {
+        bufferSize * sizeof(float),
+        D3D11_USAGE_DEFAULT,
+        D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS,
+        0 /* no CPU access */,
+        D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS /* misc flags */,
+        sizeof(float)
+    };
+    D3D11_SUBRESOURCE_DATA resourceData;
+    ZeroMemory( &resourceData, sizeof( D3D11_SUBRESOURCE_DATA ) );
+
+    std::vector<float> vertices(bufferSize, 1.0f);
+
+    resourceData.pSysMem = &vertices[0];
+    CComPtr<ID3D11Buffer> buffer;
+    hr = device->CreateBuffer(&bufferDesc, &resourceData, &buffer);
+    assert(SUCCEEDED(hr));
+
+    array<float, 1> arr = make_array<float, 1>(extent<1>(bufferSize), dxView, buffer);
+    std::wcout << "Created array<float,1> on " << arr.accelerator_view.accelerator.description << std::endl;
+
+    // Create a texture from a D3D texture resource
+
+    const int height = 100; 
+    const int width = 100;
+
+    D3D11_TEXTURE2D_DESC desc; 
+    ZeroMemory(&desc, sizeof(desc)); 
+    desc.Height = height; 
+    desc.Width = width; 
+    desc.MipLevels = 1; 
+    desc.ArraySize = 1; 
+    desc.Format = DXGI_FORMAT_R8G8B8A8_TYPELESS; 
+    desc.SampleDesc.Count = 1; 
+    desc.SampleDesc.Quality = 0; 
+    desc.Usage = D3D11_USAGE_DEFAULT; 
+    desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE; 
+    desc.CPUAccessFlags = 0; 
+    desc.MiscFlags = 0;
+
+    ID3D11Texture2D *dxTexture = nullptr; 
+    hr = device->CreateTexture2D(&desc, nullptr, &dxTexture);
+    assert(SUCCEEDED(hr));
+
+    texture<uint4, 2> ampTexture = make_texture<uint4, 2>(dxView, dxTexture);
+    std::wcout << "Created texture<uint4, 2> on " << ampTexture.accelerator_view.accelerator.description << std::endl;
+}
