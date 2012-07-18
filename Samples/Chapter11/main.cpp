@@ -118,12 +118,12 @@ void TextureCopy()
 
     texture<uint, 2> text1(rows, cols, uintData.cbegin(), uintData.cend());
 
-    uint bitsPerElement = 8u;
+    uint bitsPerScalarElement = 8u;
     uint dataSize = rows * cols;
     std::vector<char> byteData((rows * cols), 1);
-    texture<uint, 2> text2(rows, cols, byteData.data(), dataSize, bitsPerElement);
+    texture<uint, 2> text2(rows, cols, byteData.data(), dataSize, bitsPerScalarElement);
 
-    texture<uint, 2> text3(rows, cols, bitsPerElement);
+    texture<uint, 2> text3(rows, cols, bitsPerScalarElement);
     copy(uintData.data(), dataSize, text3);
 
     writeonly_texture_view<uint, 2> textVw3(text3);
@@ -131,7 +131,7 @@ void TextureCopy()
 
     copy(text3, byteData.data(), dataSize);
 
-    texture<uint, 2> text4(rows, cols, bitsPerElement);
+    texture<uint, 2> text4(rows, cols, bitsPerScalarElement);
     text3.copy_to(text4);
 
     //  Asynchronous copy
@@ -173,11 +173,11 @@ void TextureReading()
 
 void TextureReadingChars()
 {
-    const UINT bitsPerElement = 8u;
+    const UINT bitsPerScalarElement = 8u;
     const int size = 1024;
     std::vector<char> input(size, 'a');
 
-    const texture<int, 1> inputTx(size, input.data(), size, bitsPerElement);
+    const texture<int, 1> inputTx(size, input.data(), size, bitsPerScalarElement);
     std::vector<int> output(size, 0);
     array_view<int, 1> outputAv(size, output);
     outputAv.discard_data();
@@ -256,11 +256,14 @@ void InteropFromD3D()
 
     //  Get a D3D texture resource from a texture
 
+    // TODO_AMP: Fix this is currently doesn't work.
+    /*
     texture<int, 2> text(100, 100);
     CComPtr<ID3D11Buffer> texture;
     IUnknown* unkRes = get_texture(text); // concurrency::graphics::direct3d 
     hr = unkBuf->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID*>(&texture));   
     assert(SUCCEEDED(hr));
+    */
 }
 
 void InteropToD3D()
@@ -330,7 +333,7 @@ void InteropToD3D()
     desc.Width = width; 
     desc.MipLevels = 1; 
     desc.ArraySize = 1; 
-    desc.Format = DXGI_FORMAT_R8G8B8A8_TYPELESS; 
+    desc.Format = DXGI_FORMAT_R8G8B8A8_UINT; 
     desc.SampleDesc.Count = 1; 
     desc.SampleDesc.Quality = 0; 
     desc.Usage = D3D11_USAGE_DEFAULT; 
@@ -338,7 +341,7 @@ void InteropToD3D()
     desc.CPUAccessFlags = 0; 
     desc.MiscFlags = 0;
 
-    ID3D11Texture2D *dxTexture = nullptr; 
+    CComPtr<ID3D11Texture2D> dxTexture = nullptr; 
     hr = device->CreateTexture2D(&desc, nullptr, &dxTexture);
     assert(SUCCEEDED(hr));
 

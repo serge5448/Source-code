@@ -79,12 +79,10 @@ void FrameProcessorAmpTextureSingle::ConfigureFrameBuffers(const Gdiplus::Bitmap
     m_height = srcFrame.Height;
     m_width = srcFrame.Width;
 
-    m_frames[kCurrent] = std::make_shared<texture<uint_4, 2>>(int(m_height), int(m_width), 8u, 
-        m_accelerator.default_view);
-    m_frames[kNext] = std::make_shared<texture<uint_4, 2>>(int(m_height), int(m_width), 8u, 
-        m_accelerator.default_view);
-    m_frames[kOriginal] = std::make_shared<texture<uint_4, 2>>(int(m_height), int(m_width), 8u, 
-        m_accelerator.default_view);
+    std::generate(m_frames.begin(), m_frames.end(), [=]()->std::shared_ptr<texture<uint_4, 2>> 
+    { 
+        return std::make_shared<texture<uint_4, 2>>(int(m_height), int(m_width), 8u, m_accelerator.default_view); 
+    });
     m_originalFrameView = std::unique_ptr<writeonly_texture_view<uint_4, 2>>(
         new writeonly_texture_view<uint_4, 2>(*m_frames[kCurrent].get()));
 }

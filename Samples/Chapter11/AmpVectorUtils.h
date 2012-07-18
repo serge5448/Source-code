@@ -25,31 +25,33 @@ using namespace concurrency::graphics;
 //  The length() function for N > 1.
 
 template<typename T>
-inline static typename std::enable_if<(short_vector_traits<typename T>::size > 1), float>::type 
+inline static typename std::enable_if<(short_vector_traits<typename T>::size > 0), float>::type 
     length(const T& vec) restrict(cpu, amp)
 {
-    return length_helper<T::value_type, T::size>::length(vec);
-}
-
-//  The length() function for N == 1.
-
-template<typename T>
-inline static typename std::enable_if<(short_vector_traits<typename T>::size == 1), float>::type 
-    length(const T& vec)
-{
-    return static_cast<float>(vec);
+    return length_helper<short_vector_traits<typename T>::value_type, short_vector_traits<typename T>::size>::length(vec);
 }
 
 //  Template specializations for ScalarType_N short vectors.
 
 template<typename ScalarType, int N>
-class length_helper
+class length_helper 
 {
 public:
     inline static float length(const typename short_vector<ScalarType, N>::type& vec) 
         restrict(cpu, amp)
     {
         static_assert(false, "length() is not supported for this type.");
+    }
+};
+
+template<typename ScalarType>
+class length_helper<ScalarType, 1>
+{
+public:
+    inline static float length(const typename short_vector<ScalarType, 1>::type& vec) 
+        restrict(cpu, amp)
+    {
+        return static_cast<float>(vec);
     }
 };
 
