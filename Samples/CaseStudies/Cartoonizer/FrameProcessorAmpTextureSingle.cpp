@@ -78,6 +78,7 @@ void FrameProcessorAmpTextureSingle::ConfigureFrameBuffers(const Gdiplus::Bitmap
         return;
     m_height = srcFrame.Height;
     m_width = srcFrame.Width;
+    ATLTRACE("Configure frame buffers: New image size %d x %d\n", m_height, m_width);
 
     std::generate(m_frames.begin(), m_frames.end(), [=]()->std::shared_ptr<texture<uint_4, 2>> 
     { 

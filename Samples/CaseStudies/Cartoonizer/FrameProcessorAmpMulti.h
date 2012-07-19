@@ -198,7 +198,7 @@ private:
             return;
 
 #ifdef _DEBUG
-        ATLTRACE("Reallocating task image buffers\n");
+        ATLTRACE("Configure frame buffers: New image size %d x %d\n", m_height, m_width);
         UINT i = 0;
         std::for_each(taskData.begin(), taskData.end(), [=, &i] (TaskData& d) 
         {

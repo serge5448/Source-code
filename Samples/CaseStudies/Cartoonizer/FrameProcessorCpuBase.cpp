@@ -39,6 +39,7 @@ void FrameProcessorCpuBase::ConfigureFrameBuffers(const Gdiplus::BitmapData& src
     m_height = srcFrame.Height;
     m_width = srcFrame.Width;
 
+    ATLTRACE("Configure frame buffers: New image size %d x %d\n", m_height, m_width);
     const Gdiplus::Rect rect(0, 0, m_width, m_height);
 
     for (int i = 0; i < kBufSize; ++i)
