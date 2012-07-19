@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="FrameProcessorFactory">
+    <Position X="4.75" Y="0.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAA=</HashCode>
+      <FileName>FrameProcessorFactory.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="IFrameProcessor">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAA=</HashCode>
+      <FileName>IFrameProcessor.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FrameProcessorAmpMulti&lt;UseTiling&gt;" Collapsed="true">
+    <Position X="2" Y="2" Width="3" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <InheritanceLine Type="IFrameProcessor" FixedToPoint="true">
+      <Path>
+        <Point X="1.25" Y="1.603" />
+        <Point X="1.25" Y="2.312" />
+        <Point X="2" Y="2.312" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AgAAgAAAAAgAAAABAAAAAAAAAACAAAGAABEBAQAAAAA=</HashCode>
+      <FileName>FrameProcessorAmpMulti.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FrameProcessorAmpSingle&lt;UseTiling&gt;" Collapsed="true">
+    <Position X="2" Y="2.75" Width="3" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAABAAAAAIAAAAAAAACAAAABgRAAAAA=</HashCode>
+      <FileName>FrameProcessorAmpSingle.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FrameProcessorAmpTextureSingle" Collapsed="true">
+    <Position X="2" Y="3.5" Width="3" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAQBAAAAAIAAAAAAAACAAAABARAAAAQ=</HashCode>
+      <FileName>FrameProcessorAmpTextureSingle.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FrameProcessorCpuMulti" Collapsed="true">
+    <Position X="2" Y="4.5" Width="2" />
+    <InheritanceLine Type="IFrameProcessor" FixedToPoint="true">
+      <Path>
+        <Point X="1.25" Y="1.603" />
+        <Point X="1.25" Y="4.875" />
+        <Point X="2" Y="4.875" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAA=</HashCode>
+      <FileName>FrameProcessorCpuMulti.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FrameProcessorCpuSingle" Collapsed="true">
+    <Position X="2" Y="5.5" Width="2" />
+    <InheritanceLine Type="IFrameProcessor" FixedToPoint="true">
+      <Path>
+        <Point X="1.25" Y="1.603" />
+        <Point X="1.25" Y="5.875" />
+        <Point X="2" Y="5.875" />
+      </Path>
+    </InheritanceLine>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAA=</HashCode>
+      <FileName>FrameProcessorCpuSingle.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FrameProcessorCpuBase" Collapsed="true">
+    <Position X="4.75" Y="4.5" Width="2" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAIAACAAAAEADAKAAAIAAAAAAAAGAAAAAIQAAAAA=</HashCode>
+      <FileName>FrameProcessorCpuBase.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

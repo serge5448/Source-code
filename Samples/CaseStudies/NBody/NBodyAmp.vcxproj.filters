@@ -102,7 +102,9 @@
     <None Include="ParticleDrawGpu.hlsl">
       <Filter>UI</Filter>
     </None>
-    <None Include="ClassDiagram.cd" />
+    <None Include=".\Main.cd">
+      <Filter>Class diagrams</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DXUT">
@@ -116,6 +118,9 @@
     </Filter>
     <Filter Include="UI">
       <UniqueIdentifier>{d40d029d-22b6-4aef-b583-bc6b47d35fb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Class diagrams">
+      <UniqueIdentifier>{3fc6c8ee-f026-4fd1-9fd1-ce9e135fc04b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

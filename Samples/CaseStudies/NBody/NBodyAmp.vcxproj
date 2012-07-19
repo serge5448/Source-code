@@ -462,7 +462,7 @@
     <ClCompile Include=".\DXUT\Optional\DXUTsettingsdlg.cpp" />
     <ClCompile Include=".\DXUT\Optional\SDKmesh.cpp" />
     <ClCompile Include=".\DXUT\Optional\SDKmisc.cpp" />
-    <None Include="ClassDiagram.cd" />
+    <None Include=".\Main.cd" />
     <None Include="UI\arrow.x" />
     <None Include="UI\dxutcontrols.dds" />
     <None Include="UI\Font.dds" />
