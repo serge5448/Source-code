@@ -77,19 +77,19 @@ public:
         {
         case kAmpMultiTiled:
             ATLTRACE("C++ AMP multi-GPU, tiled.\n");
-            return std::make_shared<FrameProcessorAmpMulti<true>>(AmpUtils::GetAccelerators());
+            return std::make_shared<FrameProcessorAmpMultiTiled>(AmpUtils::GetAccelerators());
             break;
         case kAmpMultiSimple:
             ATLTRACE("C++ AMP multi-GPU, simple.\n");
-            return std::make_shared<FrameProcessorAmpMulti<false>>(AmpUtils::GetAccelerators());
+            return std::make_shared<FrameProcessorAmpMulti>(AmpUtils::GetAccelerators());
             break;
         case kAmpWarpTiled:
             ATLTRACE("WARP tiled.\n");
-            return std::make_shared<FrameProcessorAmpSingle<true>>(accelerator(accelerator::direct3d_warp));
+            return std::make_shared<FrameProcessorAmpSingleTiled>(accelerator(accelerator::direct3d_warp));
             break;
         case kAmpWarpSimple:
             ATLTRACE("WARP simple.\n");
-            return std::make_shared<FrameProcessorAmpSingle<false>>(accelerator(accelerator::direct3d_warp));
+            return std::make_shared<FrameProcessorAmpSingle>(accelerator(accelerator::direct3d_warp));
             break;
         case kAmpTexture:
             ATLTRACE("C++ AMP texture.\n");
@@ -97,11 +97,11 @@ public:
             break;
         case kAmpTiled:
             ATLTRACE("C++ AMP tiled.\n");
-            return std::make_shared<FrameProcessorAmpSingle<true>>(accel);
+            return std::make_shared<FrameProcessorAmpSingleTiled>(accel);
             break;
         case kAmpSimple:
             ATLTRACE("C++ AMP simple.\n");
-            return std::make_shared<FrameProcessorAmpSingle<false>>(accel);
+            return std::make_shared<FrameProcessorAmpSingle>(accel);
             break;
         case kCpuSingle:
             ATLTRACE("CPU single core.\n");

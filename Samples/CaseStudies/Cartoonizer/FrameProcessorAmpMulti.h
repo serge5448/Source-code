@@ -49,8 +49,7 @@ public:
     inline UINT EndHeight() const { return startHeight + height; };
 };
 
-template <bool UseTiling>
-class FrameProcessorAmpMulti : public IFrameProcessor
+class FrameProcessorAmpMultiBase : public IFrameProcessor
 {
 private:
     std::vector<TaskData> m_frameData;
@@ -63,7 +62,7 @@ private:
     array_view<ArgbPackedPixel, 2> m_swapViewBottom;
 
 public:
-    FrameProcessorAmpMulti(std::vector<accelerator> accels) :
+    FrameProcessorAmpMultiBase(const std::vector<accelerator>& accels) :
         m_neighborWindow(0),
         m_height(0),
         m_width(0),
@@ -97,12 +96,8 @@ public:
         {
             std::for_each(m_frameData.begin(), m_frameData.end(), [=](TaskData& d) 
             {
-                if (UseTiling)
-                    ApplyColorSimplifierTiled(d.accel, 
-                        *d.frames[current].get(), *d.frames[next].get(), simplifierNeighborWindow);
-                else
-                    ApplyColorSimplifier(d.accel, *d.frames[current].get(), *d.frames[next].get(), 
-                    simplifierNeighborWindow);
+                ::ApplyColorSimplifierHelper(d.accel, 
+                    *d.frames[current].get(), *d.frames[next].get(), simplifierNeighborWindow);
             });
 
             const UINT borderHeight = simplifierNeighborWindow / 2;
@@ -116,10 +111,7 @@ public:
 
         std::for_each(m_frameData.begin(), m_frameData.end(), [=](TaskData& d) 
         {
-            if (UseTiling)
-                ApplyEdgeDetectionTiled(d.accel, *d.frames[current].get(), *d.frames[next].get(), *d.frames[kOriginal].get(), simplifierNeighborWindow);
-            else
-                ApplyEdgeDetection(d.accel, *d.frames[current].get(), *d.frames[next].get(), *d.frames[kOriginal].get(), simplifierNeighborWindow);
+            ::ApplyEdgeDetectionHelper(d.accel, *d.frames[current].get(), *d.frames[next].get(), *d.frames[kOriginal].get(), simplifierNeighborWindow);
         });
         std::swap(current, next);
 
@@ -139,7 +131,7 @@ private:
     // main memory, modifying it and then refreshing the accelerator memory with the new edge values. Use sections so
     // only the data that has changed needs to be synced back to the accelerator.
 
-    void FrameProcessorAmpMulti::SwapEdges(array<ArgbPackedPixel, 2>* const top, array<ArgbPackedPixel, 2>* const bottom, UINT borderHeight)
+    void SwapEdges(array<ArgbPackedPixel, 2>* const top, array<ArgbPackedPixel, 2>* const bottom, UINT borderHeight)
     {
         const UINT topHeight = top->extent[0];
         top->section(topHeight - borderHeight * 2, 0, borderHeight, m_width).copy_to(m_swapViewTop); 
@@ -148,7 +140,7 @@ private:
         m_swapViewBottom.copy_to(top->section(topHeight - borderHeight, 0, borderHeight, m_width));
     }
 
-    void FrameProcessorAmpMulti::ConfigureFrameBuffers(std::vector<TaskData>& taskData, const Gdiplus::BitmapData& srcFrame, UINT neighborWindow)
+    void ConfigureFrameBuffers(std::vector<TaskData>& taskData, const Gdiplus::BitmapData& srcFrame, UINT neighborWindow)
     {
         bool neighborWindowChanged = m_neighborWindow != neighborWindow;
         bool widthChanged = m_width != srcFrame.Width;
@@ -212,5 +204,39 @@ private:
                 return std::make_shared<array<ArgbPackedPixel, 2>>(int(d.height), int(m_width), d.accel.default_view); 
             });
         });
+    }
+};
+
+class FrameProcessorAmpMulti : public FrameProcessorAmpMultiBase
+{
+public:
+    FrameProcessorAmpMulti(const std::vector<accelerator>& accels) : FrameProcessorAmpMultiBase(accels) { }
+
+    virtual inline void ApplyColorSimplifier(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
+    {
+        ::ApplyColorSimplifierHelper(acc, srcFrame, destFrame, neighborWindow);
+    }
+
+    virtual inline void ApplyEdgeDetection(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
+                        const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow)
+    {
+        ::ApplyEdgeDetectionHelper(acc, srcFrame, destFrame, orgFrame, simplifierNeighborWindow);
+    }
+};
+
+class FrameProcessorAmpMultiTiled : public FrameProcessorAmpMultiBase
+{
+public:
+    FrameProcessorAmpMultiTiled(const std::vector<accelerator>& accels) : FrameProcessorAmpMultiBase(accels) { }
+
+    virtual inline void ApplyColorSimplifier(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
+    {
+        ::ApplyColorSimplifierTiledHelper(acc, srcFrame, destFrame, neighborWindow);
+    }
+
+    virtual inline void ApplyEdgeDetection(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
+                        const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow)
+    {
+        ::ApplyEdgeDetectionTiledHelper(acc, srcFrame, destFrame, orgFrame, simplifierNeighborWindow);
     }
 };

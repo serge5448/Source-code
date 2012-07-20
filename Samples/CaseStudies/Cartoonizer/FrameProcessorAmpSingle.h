@@ -29,8 +29,7 @@
 //  This runs on a single accelerator. If no hardware accelerator is available it will use the 
 //  reference accelerator, this may be very slow.
 
-template<bool UseTiling>
-class FrameProcessorAmpSingle : public IFrameProcessor
+class FrameProcessorAmpBase : public IFrameProcessor
 {
 private:
     accelerator m_accelerator;
@@ -39,12 +38,16 @@ private:
     UINT m_width;
 
 public:
-    FrameProcessorAmpSingle(accelerator accel) :
+    FrameProcessorAmpBase(const accelerator& accel) :
         m_accelerator(accel),
         m_height(0),
         m_width(0)
     {
     }
+
+    virtual inline void ApplyEdgeDetection(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
+                        const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow) = 0;
+    virtual inline void ApplyColorSimplifier(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow) = 0;
 
     void ProcessImage(const Gdiplus::BitmapData& srcFrame, 
         Gdiplus::BitmapData& destFrame, 
@@ -61,23 +64,14 @@ public:
         m_frames[current]->copy_to(*m_frames[kOriginal].get());
         for (UINT i = 0; i < phases; ++i)
         {
-            if (UseTiling)
-                ApplyColorSimplifierTiled(m_accelerator, 
-                    *m_frames[current].get(), *m_frames[next].get(), simplifierNeighborWindow);
-            else
-                ApplyColorSimplifier(m_accelerator, *m_frames[current].get(), *m_frames[next].get(), 
-                    simplifierNeighborWindow);
+            ApplyColorSimplifier(m_accelerator, 
+                *m_frames[current].get(), *m_frames[next].get(), simplifierNeighborWindow);
             std::swap(current, next);
         }
 
-        if (UseTiling)
-            ApplyEdgeDetectionTiled(m_accelerator, 
-                *m_frames[current].get(), *m_frames[next].get(), *m_frames[kOriginal].get(), 
-                simplifierNeighborWindow);
-        else
-            ApplyEdgeDetection(m_accelerator, 
-                *m_frames[current].get(), *m_frames[next].get(), *m_frames[kOriginal].get(), 
-                simplifierNeighborWindow);
+        ApplyEdgeDetection(m_accelerator, 
+            *m_frames[current].get(), *m_frames[next].get(), *m_frames[kOriginal].get(), 
+            simplifierNeighborWindow);
         std::swap(current, next);
         CopyOut(*m_frames[current].get(), destFrame);
     }
@@ -96,4 +90,39 @@ private:
         { 
             return std::make_shared<array<ArgbPackedPixel, 2>>(int(m_height), int(m_width), m_accelerator.default_view); 
         });
-    }};
+    }
+};
+
+class FrameProcessorAmpSingle : public FrameProcessorAmpBase
+{
+public:
+    FrameProcessorAmpSingle(const accelerator& accel) : FrameProcessorAmpBase(accel) { }
+
+    virtual inline void ApplyColorSimplifier(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
+    {
+        ::ApplyColorSimplifierHelper(acc, srcFrame, destFrame, neighborWindow);
+    }
+
+    virtual inline void ApplyEdgeDetection(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
+                        const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow)
+    {
+        ::ApplyEdgeDetectionHelper(acc, srcFrame, destFrame, orgFrame, simplifierNeighborWindow);
+    }
+};
+
+class FrameProcessorAmpSingleTiled : public FrameProcessorAmpBase
+{
+public:
+    FrameProcessorAmpSingleTiled(const accelerator& accel) : FrameProcessorAmpBase(accel) { }
+
+    virtual inline void ApplyColorSimplifier(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
+    {
+        ::ApplyColorSimplifierTiledHelper(acc, srcFrame, destFrame, neighborWindow);
+    }
+
+    virtual inline void ApplyEdgeDetection(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
+                        const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow)
+    {
+        ::ApplyEdgeDetectionTiledHelper(acc, srcFrame, destFrame, orgFrame, simplifierNeighborWindow);
+    }
+};

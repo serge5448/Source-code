@@ -66,9 +66,9 @@ inline void CopyOut(array<ArgbPackedPixel, 2>& currentImg, Gdiplus::BitmapData& 
 
 //  Color simplifier.
 
-void ApplyColorSimplifier(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow);
+void ApplyColorSimplifierHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow);
 
-void ApplyColorSimplifierTiled(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow);
+void ApplyColorSimplifierTiledHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow);
 
 void SimplifyIndex(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, index<2> idx, UINT neighborWindow, const float_3& W) restrict(amp);
 
@@ -77,15 +77,15 @@ void SimplifyIndexTiled(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPac
 
 //  Edge detection.
 
-void ApplyEdgeDetection(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
+void ApplyEdgeDetectionHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
                         const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow);
-void ApplyEdgeDetectionTiled(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
+void ApplyEdgeDetectionTiledHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
                              const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow);
 
-void EdgeDetection(index<2> idx, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame,  
+void DetectEdge(index<2> idx, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame,  
                    const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow, const float_3& W) restrict(amp);
 
-void EdgeDetectionTiled(tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
+void DetectEdgeTiled(tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
                         const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow, const float_3& W) restrict(amp);
 
 void CalculateSobel(const array<ArgbPackedPixel, 2>& source, index<2> idx, float& dy, float& du, float& dv, const float_3& W) restrict(amp);

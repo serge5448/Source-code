@@ -86,7 +86,7 @@ void CopyOut(array<ArgbPackedPixel, 2>& currentImg, Gdiplus::BitmapData& destFra
 // exponential decay function then summing the results.
 // We then set the R, G, B values to the normalized sums
 
-void ApplyColorSimplifier(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
+void ApplyColorSimplifierHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
 {
     const float_3 W(ImageUtils::W);
 
@@ -97,7 +97,7 @@ void ApplyColorSimplifier(accelerator& acc, const array<ArgbPackedPixel, 2>& src
     });
 }
 
-void ApplyColorSimplifierTiled(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
+void ApplyColorSimplifierTiledHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
 {
     const float_3 W(ImageUtils::W);
 
@@ -252,9 +252,9 @@ void SimplifyIndexTiled(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPac
 //  Edge detection.
 //--------------------------------------------------------------------------------------
 
-void ApplyEdgeDetection(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, 
-                        array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
-                        UINT simplifierNeighborWindow)
+void ApplyEdgeDetectionHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, 
+                              array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
+                              UINT simplifierNeighborWindow)
 {
     const float_3 W(ImageUtils::W);
     const float alpha = 0.3f;
@@ -270,13 +270,13 @@ void ApplyEdgeDetection(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFr
     parallel_for_each(acc.default_view, computeDomain, 
         [=, &srcFrame, &destFrame, &orgFrame](index<2> idx) restrict(amp) 
     {
-        EdgeDetection(idx, srcFrame, destFrame, orgFrame, simplifierNeighborWindow, W);
+        DetectEdge(idx, srcFrame, destFrame, orgFrame, simplifierNeighborWindow, W);
     });
 }
 
-void ApplyEdgeDetectionTiled(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, 
-                        array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
-                        UINT simplifierNeighborWindow)
+void ApplyEdgeDetectionTiledHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, 
+                                   array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
+                                   UINT simplifierNeighborWindow)
 {
     const float_3 W(ImageUtils::W);
     const float alpha = 0.3f;
@@ -290,13 +290,13 @@ void ApplyEdgeDetectionTiled(accelerator& acc, const array<ArgbPackedPixel, 2>& 
     tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> computeDomain(GetTiledExtent(ext));
     parallel_for_each(acc.default_view, computeDomain.tile<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize>(), [=, &srcFrame, &destFrame, &orgFrame](tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx) restrict(amp) 
     {
-        EdgeDetectionTiled(idx, srcFrame, destFrame, orgFrame, simplifierNeighborWindow, W);
+        DetectEdgeTiled(idx, srcFrame, destFrame, orgFrame, simplifierNeighborWindow, W);
     });
 }
 
-void EdgeDetection(index<2> idx, const array<ArgbPackedPixel, 2>& srcFrame, 
-    array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
-    UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
+void DetectEdge(index<2> idx, const array<ArgbPackedPixel, 2>& srcFrame, 
+                array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
+                UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
 {
     const float alpha = 0.3f;       // Weighting of original frame for edge detection
     const float beta = 0.8f;        // Weighting of source (color simplified) frame for edge detection
@@ -329,8 +329,8 @@ void EdgeDetection(index<2> idx, const array<ArgbPackedPixel, 2>& srcFrame,
     destFrame[idc] = PackPixel(destClr);
 }
 
-void EdgeDetectionTiled(tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame,
-                        const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
+void DetectEdgeTiled(tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame,
+                     const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
 {
     const UINT shift = FrameProcessorAmp::EdgeBorderWidth / 2;
     const UINT offset = simplifierNeighborWindow / 2;   // Don't apply edge detection to pixels at image edges that were not color simplified.

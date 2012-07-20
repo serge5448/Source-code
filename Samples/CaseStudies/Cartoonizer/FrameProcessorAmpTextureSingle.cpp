@@ -34,7 +34,7 @@ void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const writeonly_texture_v
 
 void ApplyEdgeDetection(accelerator& acc, const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>& destFrame, 
                                const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow);
-void EdgeDetection(index<2> idx, const texture<uint_4, 2>& srcFrame, const writeonly_texture_view<uint_4, 2>& destFrame,  
+void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame, const writeonly_texture_view<uint_4, 2>& destFrame,  
                           const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow, const float_3& W) restrict(amp);
 void CalculateSobel(const texture<uint_4, 2>& source, index<2> idx, float& dy, float& du, float& dv,  const float_3& W) restrict(amp);
 
@@ -173,11 +173,11 @@ void ApplyEdgeDetection(accelerator& acc, const texture<uint_4, 2>& srcFrame,
     parallel_for_each(acc.default_view, computeDomain, 
         [=, &srcFrame, &orgFrame](index<2> idx) restrict(amp) 
     {
-        EdgeDetection(idx, srcFrame, destView, orgFrame, simplifierNeighborWindow, W);
+        DetectEdge(idx, srcFrame, destView, orgFrame, simplifierNeighborWindow, W);
     });
 }
 
-void EdgeDetection(index<2> idx, const texture<uint_4, 2>& srcFrame, 
+void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame, 
                    const writeonly_texture_view<uint_4, 2>& destFrame, const texture<uint_4, 2>& orgFrame, 
                    UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
 {
