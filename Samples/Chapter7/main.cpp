@@ -35,11 +35,13 @@ void DoWork(array<float, 1>& input, array<float, 1>& output);
 
 void SimpleTimingExample();
 void FullTimingExample();
-void ArrayAliasing();
-void EfficientCopying();
-void AsyncCopying();
+void ArrayAliasingExample();
+void TextureAliasingExample();
+void ArrayViewAliasingExample();
+void EfficientCopyingExample();
+void AsyncCopyingExample();
 void MemoryAccessExample();
-void UseArrayConstant();
+void UseArrayConstantExample();
 void DivergentDataExample();
 void DivergentKernelExample();
 void ApplyDivergentStencil(accelerator_view& view, const array<float, 2>& input, array<float, 2>& output);
@@ -69,12 +71,13 @@ int main()
         std::wcout << " WARNING!! No C++ AMP hardware accelerator detected, using the REF accelerator." << std::endl << 
             "To see better performance run on C++ AMP\ncapable hardware." << std::endl;
 #endif
-
-    ArrayAliasing();
-    EfficientCopying();
-    AsyncCopying();
+    ArrayAliasingExample();
+    ArrayViewAliasingExample();
+    // TextureAliasingExample();
+    EfficientCopyingExample();
+    AsyncCopyingExample();
     MemoryAccessExample();
-    UseArrayConstant();
+    UseArrayConstantExample();
     DivergentDataExample();
     DivergentKernelExample();
 
@@ -171,18 +174,18 @@ void FullTimingExample()
 void CopyArray(accelerator_view& view, const array<int, 1>& src, array<int, 1>& dest) 
 {     
     parallel_for_each(view, dest.extent, [&src, &dest] (index<1> idx) restrict(amp) 
-    {         
-        dest[idx] = src[idx];     
+    {
+        dest[idx] = src[idx];
     }); 
 }
 
-void ArrayAliasing()
+void ArrayAliasingExample()
 {
     std::wcout << std::endl << " Measuring the impact of aliased invocations" << std::endl << std::endl;
 
     const int size = 100000000;
 
-    array<int, 1> src(size);    // code to initialize “arr1” is elided
+    array<int, 1> src(size);
     array<int, 1> dest(size);
 
     accelerator_view view = accelerator().default_view;
@@ -198,20 +201,73 @@ void ArrayAliasing()
     {
         CopyArray(view, src, dest);
     });
-    std::wcout << "   Aliased time:  " << computeTime << " (ms)" << std::endl;
+    std::wcout << "   Aliased time:    " << computeTime << " (ms)" << std::endl;
 
     computeTime = TimeFunc(view, [&]()
     {
         CopyArray(view, src, src);
     });
-    std::wcout << "   Aliased time:  " << computeTime << " (ms)" << std::endl;
+    std::wcout << "   Aliased time:    " << computeTime << " (ms)" << std::endl;
+}
+
+void CopyTexture(const texture<int, 1>& src, texture<int, 1>& dest) 
+{     
+    parallel_for_each(dest.extent, [&src, &dest] (index<1> idx) restrict(amp) 
+    {
+        dest.set(idx, src[idx]);
+    }); 
+}
+
+void TextureAliasingExample() //  Results in runtime errors.
+{
+    texture<int, 1> tex1(16);
+    CopyTexture(tex1, tex1);
+}
+
+void ArrayViewAliasingExample()
+{
+    //  An aliased invocation. Both array_views refer to the same array.
+
+    const int size = 100000000;
+    const int halfSize = size / 2;
+
+    {
+        array<int, 1> allData(size); 
+        array_view<int, 1> firstHalf = allData.section(0, halfSize);            // Refers to allData.
+        array_view<int, 1> secondHalf = allData.section(halfSize, halfSize);    // Refers to allData.
+        parallel_for_each(secondHalf.extent, [=] (index<1> idx) restrict(amp) {
+            secondHalf[idx] = firstHalf[idx];
+        });
+    }
+
+    //  Not an aliased invocation. The array_views are created directly on top of host memory.
+
+    {
+        std::vector<int> vec(size, 0);
+        array_view<int, 1> allData(size, vec);
+        array_view<int, 1> firstHalf(halfSize, vec);                            // The array_view created directly on top of host memory.
+        parallel_for_each(firstHalf.extent, [=] (index<1> idx) restrict(amp) {
+            allData[idx + size] = firstHalf[idx];
+        });
+    }
+
+    //  Aliased invocation. The array_views 
+
+    {
+        std::vector<int> vec(size, 0);
+        array_view<int, 1> allData(size, vec);
+        array_view<int, 1> firstHalf = allData.section(0, halfSize);            // The array_view is created from an array_view (section) not host memory.
+        parallel_for_each(firstHalf.extent, [=] (index<1> idx) restrict(amp) {
+            allData[idx + size] = firstHalf[idx];
+        });
+    }
 }
 
 //--------------------------------------------------------------------------------------
 //  Improving copy efficiency
 //--------------------------------------------------------------------------------------
 
-void EfficientCopying()
+void EfficientCopyingExample()
 {
     // Limit data being copied in and out using const and discard_data.
 
@@ -228,7 +284,7 @@ void EfficientCopying()
 //  Asynchronous copying
 //--------------------------------------------------------------------------------------
 
-void AsyncCopying()
+void AsyncCopyingExample()
 {
     std::vector<float> cpuData(20000000, 0.0f);
     array<float, 1> gpuData(int(cpuData.size()));
@@ -337,7 +393,7 @@ struct Wrapper
     int data[3];
 };
 
-void UseArrayConstant()
+void UseArrayConstantExample()
 {
     Wrapper wrap;
     wrap.data[0] = 1;
