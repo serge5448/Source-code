@@ -17,7 +17,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Chapter7", "Chapter7\Chapte
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B730B172-0E1F-4CCF-BD93-E87B46D95A53}"
 	ProjectSection(SolutionItems) = preProject
-		deploy.msbuild = deploy.msbuild
 		license.txt = license.txt
 	EndProjectSection
 EndProject
@@ -55,14 +54,14 @@ Global
 		SccProjectName5 = Chapter4
 		SccProjectName6 = Chapter9
 		SccProjectName7 = Chapter11
-		SccProjectTopLevelParentUniqueName0 = AllCode.sln
-		SccProjectTopLevelParentUniqueName1 = AllCode.sln
-		SccProjectTopLevelParentUniqueName2 = AllCode.sln
-		SccProjectTopLevelParentUniqueName3 = AllCode.sln
-		SccProjectTopLevelParentUniqueName4 = AllCode.sln
-		SccProjectTopLevelParentUniqueName5 = AllCode.sln
-		SccProjectTopLevelParentUniqueName6 = AllCode.sln
-		SccProjectTopLevelParentUniqueName7 = AllCode.sln
+		SccProjectTopLevelParentUniqueName0 = BookSamples.sln
+		SccProjectTopLevelParentUniqueName1 = BookSamples.sln
+		SccProjectTopLevelParentUniqueName2 = BookSamples.sln
+		SccProjectTopLevelParentUniqueName3 = BookSamples.sln
+		SccProjectTopLevelParentUniqueName4 = BookSamples.sln
+		SccProjectTopLevelParentUniqueName5 = BookSamples.sln
+		SccProjectTopLevelParentUniqueName6 = BookSamples.sln
+		SccProjectTopLevelParentUniqueName7 = BookSamples.sln
 		SccProjectUniqueName0 = CaseStudies\\NBody\\NBodyAmp.vcxproj
 		SccProjectUniqueName1 = CaseStudies\\NBody\\NBodyCpu.vcxproj
 		SccProjectUniqueName2 = CaseStudies\\Reduction\\Reduction.vcxproj
