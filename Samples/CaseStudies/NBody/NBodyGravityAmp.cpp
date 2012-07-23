@@ -83,7 +83,6 @@ CComPtr<ID3D11SamplerState>         g_pSampleStateLinear;
 CComPtr<ID3D11BlendState>           g_pBlendingStateParticle;
 CComPtr<ID3D11DepthStencilState>    g_pDepthStencilState;
 
-// TODO_AMP: Do we really need two buffers here? It doesn't look like they get used.
 CComPtr<ID3D11Buffer>               g_pParticlePosOld;
 CComPtr<ID3D11Buffer>               g_pParticlePosNew;
 CComPtr<ID3D11ShaderResourceView>   g_pParticlePosRvOld;

@@ -59,7 +59,8 @@ public:
 
     void run()
     {
-        parallel_for_each(m_processors.begin(), m_processors.end(), [=](std::shared_ptr<IFrameProcessor>& p)
+        parallel_for_each(m_processors.begin(), m_processors.end(), 
+            [=](std::shared_ptr<IFrameProcessor>& p)
         {
             ImageInfoPtr pInfo = nullptr;
             do

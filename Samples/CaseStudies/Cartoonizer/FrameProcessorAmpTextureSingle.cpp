@@ -27,12 +27,12 @@ using namespace concurrency::direct3d;
 //  Color simplifier
 
 extent<2> GetTiledExtent(extent<2> ext);
-void ApplyColorSimplifier(accelerator& acc, const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>& destFrame, UINT neighborWindow);
+void ApplyColorSimplifier(const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>& destFrame, UINT neighborWindow);
 void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const writeonly_texture_view<uint_4, 2>& destFrame, index<2> idx, UINT neighborWindow, const float_3& W) restrict(amp);
 
 //  Edge detection.
 
-void ApplyEdgeDetection(accelerator& acc, const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>& destFrame, 
+void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>& destFrame, 
                                const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow);
 void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame, const writeonly_texture_view<uint_4, 2>& destFrame,  
                           const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow, const float_3& W) restrict(amp);
