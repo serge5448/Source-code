@@ -96,7 +96,7 @@ public:
         {
             std::for_each(m_frameData.begin(), m_frameData.end(), [=](TaskData& d) 
             {
-                ::ApplyColorSimplifierHelper(d.accel, 
+                ::ApplyColorSimplifierHelper(
                     *d.frames[current].get(), *d.frames[next].get(), simplifierNeighborWindow);
             });
 
@@ -111,7 +111,7 @@ public:
 
         std::for_each(m_frameData.begin(), m_frameData.end(), [=](TaskData& d) 
         {
-            ::ApplyEdgeDetectionHelper(d.accel, *d.frames[current].get(), *d.frames[next].get(), *d.frames[kOriginal].get(), simplifierNeighborWindow);
+            ::ApplyEdgeDetectionHelper(*d.frames[current].get(), *d.frames[next].get(), *d.frames[kOriginal].get(), simplifierNeighborWindow);
         });
         std::swap(current, next);
 
@@ -214,13 +214,13 @@ public:
 
     virtual inline void ApplyColorSimplifier(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
     {
-        ::ApplyColorSimplifierHelper(acc, srcFrame, destFrame, neighborWindow);
+        ::ApplyColorSimplifierHelper(srcFrame, destFrame, neighborWindow);
     }
 
     virtual inline void ApplyEdgeDetection(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
                         const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow)
     {
-        ::ApplyEdgeDetectionHelper(acc, srcFrame, destFrame, orgFrame, simplifierNeighborWindow);
+        ::ApplyEdgeDetectionHelper(srcFrame, destFrame, orgFrame, simplifierNeighborWindow);
     }
 };
 
@@ -231,12 +231,12 @@ public:
 
     virtual inline void ApplyColorSimplifier(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
     {
-        ::ApplyColorSimplifierTiledHelper(acc, srcFrame, destFrame, neighborWindow);
+        ::ApplyColorSimplifierTiledHelper(srcFrame, destFrame, neighborWindow);
     }
 
     virtual inline void ApplyEdgeDetection(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
                         const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow)
     {
-        ::ApplyEdgeDetectionTiledHelper(acc, srcFrame, destFrame, orgFrame, simplifierNeighborWindow);
+        ::ApplyEdgeDetectionTiledHelper(srcFrame, destFrame, orgFrame, simplifierNeighborWindow);
     }
 };

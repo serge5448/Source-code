@@ -86,18 +86,18 @@ void CopyOut(array<ArgbPackedPixel, 2>& currentImg, Gdiplus::BitmapData& destFra
 // exponential decay function then summing the results.
 // We then set the R, G, B values to the normalized sums
 
-void ApplyColorSimplifierHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
+void ApplyColorSimplifierHelper(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
 {
     const float_3 W(ImageUtils::W);
 
     extent<2> computeDomain(srcFrame.extent - extent<2>(neighborWindow, neighborWindow));
-    parallel_for_each(acc.default_view, computeDomain, [=, &srcFrame, &destFrame](index<2> idx) restrict(amp)
+    parallel_for_each(computeDomain, [=, &srcFrame, &destFrame](index<2> idx) restrict(amp)
     {
         SimplifyIndex(srcFrame, destFrame, idx, neighborWindow, W);
     });
 }
 
-void ApplyColorSimplifierTiledHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
+void ApplyColorSimplifierTiledHelper(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow)
 {
     const float_3 W(ImageUtils::W);
 
@@ -105,7 +105,7 @@ void ApplyColorSimplifierTiledHelper(accelerator& acc, const array<ArgbPackedPix
 
     extent<2> ext = GetTiledExtent(srcFrame.extent);
     tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> computeDomain(ext);
-    parallel_for_each(acc.default_view, computeDomain, [=, &srcFrame, &destFrame](tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx) restrict(amp)
+    parallel_for_each(computeDomain, [=, &srcFrame, &destFrame](tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx) restrict(amp)
     {
         SimplifyIndexTiled(srcFrame, destFrame, idx, neighborWindow, W);
     });
@@ -252,7 +252,7 @@ void SimplifyIndexTiled(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPac
 //  Edge detection.
 //--------------------------------------------------------------------------------------
 
-void ApplyEdgeDetectionHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, 
+void ApplyEdgeDetectionHelper(const array<ArgbPackedPixel, 2>& srcFrame, 
                               array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
                               UINT simplifierNeighborWindow)
 {
@@ -267,14 +267,14 @@ void ApplyEdgeDetectionHelper(accelerator& acc, const array<ArgbPackedPixel, 2>&
 
     extent<2> computeDomain(ext - 
         extent<2>(FrameProcessorAmp::EdgeBorderWidth, FrameProcessorAmp::EdgeBorderWidth));
-    parallel_for_each(acc.default_view, computeDomain, 
+    parallel_for_each(computeDomain, 
         [=, &srcFrame, &destFrame, &orgFrame](index<2> idx) restrict(amp) 
     {
         DetectEdge(idx, srcFrame, destFrame, orgFrame, simplifierNeighborWindow, W);
     });
 }
 
-void ApplyEdgeDetectionTiledHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, 
+void ApplyEdgeDetectionTiledHelper(const array<ArgbPackedPixel, 2>& srcFrame, 
                                    array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
                                    UINT simplifierNeighborWindow)
 {
@@ -288,7 +288,7 @@ void ApplyEdgeDetectionTiledHelper(accelerator& acc, const array<ArgbPackedPixel
     extent<2> ext(srcFrame.extent - extent<2>(simplifierNeighborWindow, simplifierNeighborWindow));
 
     tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> computeDomain(GetTiledExtent(ext));
-    parallel_for_each(acc.default_view, computeDomain.tile<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize>(), [=, &srcFrame, &destFrame, &orgFrame](tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx) restrict(amp) 
+    parallel_for_each(computeDomain.tile<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize>(), [=, &srcFrame, &destFrame, &orgFrame](tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx) restrict(amp) 
     {
         DetectEdgeTiled(idx, srcFrame, destFrame, orgFrame, simplifierNeighborWindow, W);
     });

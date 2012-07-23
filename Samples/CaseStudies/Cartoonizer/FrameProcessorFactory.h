@@ -70,7 +70,8 @@ enum FrameProcessorType
 class FrameProcessorFactory
 {
 public:
-    static std::shared_ptr<IFrameProcessor> Create(FrameProcessorType processorType, const accelerator&  accel = accelerator(accelerator::default_accelerator))
+    static std::shared_ptr<IFrameProcessor> Create(FrameProcessorType processorType,
+        const accelerator&  accel = accelerator(accelerator::default_accelerator))
     {
         ATLTRACE("Using frame processor: %d, ", processorType);
         switch (processorType)

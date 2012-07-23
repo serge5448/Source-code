@@ -58,12 +58,12 @@ void FrameProcessorAmpTextureSingle::ProcessImage(const Gdiplus::BitmapData& src
     m_frames[current]->copy_to(*m_frames[kOriginal].get());
     for (UINT i = 0; i < phases; ++i)
     {
-        ApplyColorSimplifier(m_accelerator, *m_frames[current].get(), *m_frames[next].get(), 
+        ApplyColorSimplifier(*m_frames[current].get(), *m_frames[next].get(), 
                              simplifierNeighborWindow);
         std::swap(current, next);
     }
 
-    ApplyEdgeDetection(m_accelerator, 
+    ApplyEdgeDetection(
         *m_frames[current].get(), *m_frames[next].get(), *m_frames[kOriginal].get(), 
         simplifierNeighborWindow);
     std::swap(current, next);
@@ -97,13 +97,13 @@ void FrameProcessorAmpTextureSingle::ConfigureFrameBuffers(const Gdiplus::Bitmap
 // exponential decay function then summing the results.
 // We then set the R, G, B values to the normalized sums
 
-void ApplyColorSimplifier(accelerator& acc, const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>& destFrame, UINT neighborWindow)
+void ApplyColorSimplifier(const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>& destFrame, UINT neighborWindow)
 {
     const float_3 W(ImageUtils::W);
 
     writeonly_texture_view<uint_4, 2> destView(destFrame);
     extent<2> computeDomain(srcFrame.extent - extent<2>(neighborWindow, neighborWindow));
-    parallel_for_each(acc.default_view, computeDomain, [=, &srcFrame](index<2> idx) restrict(amp)
+    parallel_for_each(computeDomain, [=, &srcFrame](index<2> idx) restrict(amp)
     {
         SimplifyIndex(srcFrame, destView, idx, neighborWindow, W);
     });
@@ -155,7 +155,7 @@ void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const writeonly_texture_v
 //  Edge detection.
 //--------------------------------------------------------------------------------------
 
-void ApplyEdgeDetection(accelerator& acc, const texture<uint_4, 2>& srcFrame, 
+void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame, 
                         texture<uint_4, 2>& destFrame, const texture<uint_4, 2>& orgFrame, 
                         UINT simplifierNeighborWindow)
 {
@@ -170,7 +170,7 @@ void ApplyEdgeDetection(accelerator& acc, const texture<uint_4, 2>& srcFrame,
 
     writeonly_texture_view<uint_4, 2> destView(destFrame);
     extent<2> computeDomain(ext - extent<2>(FrameProcessorAmp::EdgeBorderWidth, FrameProcessorAmp::EdgeBorderWidth));
-    parallel_for_each(acc.default_view, computeDomain, 
+    parallel_for_each(computeDomain, 
         [=, &srcFrame, &orgFrame](index<2> idx) restrict(amp) 
     {
         DetectEdge(idx, srcFrame, destView, orgFrame, simplifierNeighborWindow, W);

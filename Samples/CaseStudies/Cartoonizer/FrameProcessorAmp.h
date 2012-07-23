@@ -66,9 +66,9 @@ inline void CopyOut(array<ArgbPackedPixel, 2>& currentImg, Gdiplus::BitmapData& 
 
 //  Color simplifier.
 
-void ApplyColorSimplifierHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow);
+void ApplyColorSimplifierHelper(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow);
 
-void ApplyColorSimplifierTiledHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow);
+void ApplyColorSimplifierTiledHelper(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, UINT neighborWindow);
 
 void SimplifyIndex(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, index<2> idx, UINT neighborWindow, const float_3& W) restrict(amp);
 
@@ -77,9 +77,9 @@ void SimplifyIndexTiled(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPac
 
 //  Edge detection.
 
-void ApplyEdgeDetectionHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
+void ApplyEdgeDetectionHelper(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
                         const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow);
-void ApplyEdgeDetectionTiledHelper(accelerator& acc, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
+void ApplyEdgeDetectionTiledHelper(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, 
                              const array<ArgbPackedPixel, 2>& orgFrame, UINT simplifierNeighborWindow);
 
 void DetectEdge(index<2> idx, const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame,  
