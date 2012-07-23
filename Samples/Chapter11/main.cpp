@@ -238,7 +238,7 @@ void TextureReadingAndWritingWithViews()
 
 void InteropFromD3D()
 { 
-    //  Get a D3D device from an accelerator_view
+    //  Get a D3D device from an accelerator_view.
 
     HRESULT hr = S_OK;
     CComPtr<ID3D11Device> device;
@@ -246,7 +246,7 @@ void InteropFromD3D()
     hr = unkDev->QueryInterface(__uuidof(ID3D11Device), reinterpret_cast<LPVOID*>(&device));   
     assert(SUCCEEDED(hr));
 
-    //  Get a D3D buffer from an array
+    //  Get a D3D buffer from an array.
 
     array<int, 1> arr(1024);
     CComPtr<ID3D11Buffer> buffer;
@@ -254,16 +254,14 @@ void InteropFromD3D()
     hr = unkBuf->QueryInterface(__uuidof(ID3D11Buffer), reinterpret_cast<LPVOID*>(&buffer));   
     assert(SUCCEEDED(hr));
 
-    //  Get a D3D texture resource from a texture
+    //  Get a D3D texture resource from a texture.
 
-    // TODO_AMP: Fix this is currently doesn't work.
-    /*
     texture<int, 2> text(100, 100);
-    CComPtr<ID3D11Buffer> texture;
-    IUnknown* unkRes = get_texture(text); // concurrency::graphics::direct3d 
-    hr = unkBuf->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID*>(&texture));   
+    CComPtr<ID3D11Texture2D> texture;
+    IUnknown* unkRes = get_texture(text); 
+    hr = unkRes->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID*>(&texture));   
     assert(SUCCEEDED(hr));
-    */
+
 }
 
 void InteropToD3D()
