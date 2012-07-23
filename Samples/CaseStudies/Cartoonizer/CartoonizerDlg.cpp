@@ -128,6 +128,13 @@ BOOL CartoonizerDlg::OnInitDialog()
     SetIcon(m_hIcon, true);
     SetIcon(m_hIcon, false);
 
+    OSVERSIONINFO verInfo;
+    ZeroMemory(&verInfo, sizeof(OSVERSIONINFO));
+    verInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&verInfo);
+    bool isWindows8 = (verInfo.dwMajorVersion >= 6) && (verInfo.dwMinorVersion >= 2);
+    m_consoleHeight = (isWindows8) ? m_consoleHeightWin8 : m_consoleHeightWin7;
+
     bool hasCameras = ConfigureSources();
     AmpUtils::DebugListAccelerators(AmpUtils::GetAccelerators(true));
 
@@ -595,7 +602,6 @@ void CartoonizerDlg::SetButtonState(PipelineState state)
 
 void CartoonizerDlg::OnGetMinMaxInfo(MINMAXINFO FAR* lpMMI)
 {
-    // TODO_AMP: Window now too big on Win7 machines?!
     CRect rect(0, 0, m_consoleWidth * 2, m_consoleHeight);
     CalcWindowRect(rect);
 

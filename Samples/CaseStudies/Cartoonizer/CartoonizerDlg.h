@@ -102,7 +102,10 @@ private:
     static const int m_imageTop = 10;
     static const int m_imageLeft = 10;
     static const int m_consoleWidth = 250;
-    static const int m_consoleHeight = 780;
+    static const int m_consoleHeightWin8 = 760;
+    static const int m_consoleHeightWin7 = 620;
+    int m_consoleHeight;
+
     SIZE m_displaySize;
     SIZE m_previousBitmapSize;
     Gdiplus::SolidBrush m_backgroundBrush;
