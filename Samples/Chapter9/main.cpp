@@ -240,7 +240,8 @@ struct TaskData
 
     TaskData(accelerator a, int i) : view(a.default_view), id(i) {}
 
-    static std::vector<TaskData> Configure(const std::vector<accelerator>& accls,  int rows, int cols, int shift)
+    static std::vector<TaskData> Configure(const std::vector<accelerator>& accls,  
+        int rows, int cols, int shift)
     {
         std::vector<TaskData> tasks;
         int startRow = 0;
@@ -313,8 +314,8 @@ void MatrixMultiGpuSqu(const std::vector<accelerator>& accls, const int rows, co
 
     std::vector<float> vA(rows * cols);
     std::vector<float> vC(rows * cols);
-    float v = 0.0;
-    std::generate(vA.begin(), vA.end(), [&v]() { return v++; });
+    float n = 0.0;
+    std::generate(vA.begin(), vA.end(), [&n]() { return n++; });
     std::vector<array_view<float, 2>> avCs;
 
     //  Calculation
@@ -361,8 +362,8 @@ void LoopedMatrixMultiGpu(const std::vector<accelerator>& accls, const int rows,
 
     std::vector<float> vA(rows * cols);
     std::vector<float> vC(rows * cols);
-    float v = 0.0;
-    std::generate(vA.begin(), vA.end(), [&v]() { return v++; });
+    float n = 0.0;
+    std::generate(vA.begin(), vA.end(), [&n]() { return n++; });
 
     std::vector<array<float, 2>> arrAs;
     std::vector<array<float, 2>> arrCs;
@@ -370,7 +371,7 @@ void LoopedMatrixMultiGpu(const std::vector<accelerator>& accls, const int rows,
     std::for_each(tasks.begin(), tasks.end(), [&](const TaskData& t)
     {
         arrAs.push_back(array<float, 2>(t.readExt, &vA[t.startRow * cols], t.view));
-        arrCs.push_back(array<float, 2>(t.readExt));
+        arrCs.push_back(array<float, 2>(t.readExt, t.view));
     });
 
     // Create swap array on CPU accelerator
