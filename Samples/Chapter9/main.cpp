@@ -311,6 +311,10 @@ void MatrixMultiGpuExample(const std::vector<accelerator>& accls, const int rows
 #endif
 }
 
+//--------------------------------------------------------------------------------------
+//  Example of partitioning the problem across two or more GPUs using a std::for_each
+//--------------------------------------------------------------------------------------
+
 void MatrixMultiGpuSequentialExample(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift)
 {
     std::vector<TaskData> tasks = TaskData::Configure(accls, rows, cols, shift);
@@ -357,6 +361,7 @@ void MatrixMultiGpuSequentialExample(const std::vector<accelerator>& accls, cons
 }
 
 //--------------------------------------------------------------------------------------
+//  Example similar to MatrixMultiGpuExample but with multiple iterations.
 //--------------------------------------------------------------------------------------
 
 void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift, const int iter)
@@ -515,8 +520,6 @@ void WorkStealingExample(const std::vector<accelerator>& accls, const int rows, 
 //--------------------------------------------------------------------------------------
 //  Example showing the use of a completion_future.
 //--------------------------------------------------------------------------------------
-
-// http://msdn.microsoft.com/en-us/library/hh966736(v=vs.110).aspx
 
 void CompletionFutureExample()
 {
