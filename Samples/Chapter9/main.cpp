@@ -14,13 +14,13 @@
 // PARTICULAR PURPOSE.
 //===============================================================================
 
-#define _ITERATOR_DEBUG_LEVEL  0
 #define NOMINMAX        // Use STL min and max.
 #include <amp.h>
 #include <amp_math.h>
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <iterator>
 #include <numeric>
 #include <concurrent_queue.h>
 
@@ -28,17 +28,19 @@
 
 using namespace concurrency;
 
-void EnumeratingAccelerators();
+void EnumeratingAcceleratorsExample();
 
-void MatrixSingleGpu(const int rows, const int cols, const int shift);
+void MatrixSingleGpuExample(const int rows, const int cols, const int shift);
 
 struct TaskData;
-void MatrixMultiGpu(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift);
-void MatrixMultiGpuSqu(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift);
+void MatrixMultiGpuExample(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift);
+void MatrixMultiGpuSequentialExample(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift);
 
-void LoopedMatrixMultiGpu(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift, const int iter);
+void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift, const int iter);
 
-void WorkStealing(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift);
+void WorkStealingExample(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift);
+
+void CompletionFutureExample();
 
 float WeightedAverage(index<2> idx, const array_view<const float, 2>& data, int shift) restrict(amp);
 
@@ -57,7 +59,7 @@ int main()
 
     std::wcout << std::endl << "Enumerating accelerators" << std::endl << std::endl;
 
-    EnumeratingAccelerators();
+    EnumeratingAcceleratorsExample();
 
     //  Matrix weighted average examples.
 
@@ -66,15 +68,17 @@ int main()
 #else
     const int rows = 2000, cols = 2000, shift = 60;
 #endif
-
     std::wcout << std::endl << std::endl << " Matrix weighted average " << rows << " x " << cols << " matrix, with " 
         << shift * 2 + 1 << " x " << shift * 2 + 1 << " window" << std::endl 
         << " Matrix size " << (rows * cols * sizeof(float) / 1024) << " KB" << std::endl << std::endl;
 
-    MatrixSingleGpu(rows, cols, shift);
+    MatrixSingleGpuExample(rows, cols, shift);
 
     std::vector<accelerator> accls = accelerator::get_all();
     accls.erase(std::remove_if(accls.begin(), accls.end(), [](accelerator& a){ return a.is_emulated; }), accls.end());
+
+    if (accls.empty())
+        accls.push_back(accls.empty() ? accelerator(accelerator::direct3d_ref) : accls[0]);
 
     if (accls.size() < 2)
     {
@@ -84,16 +88,18 @@ int main()
 
     // Configure tasks for multi-GPU examples.
 
-    MatrixMultiGpu(accls, rows, cols, shift);
-    MatrixMultiGpuSqu(accls, rows, cols, shift);
+    MatrixMultiGpuExample(accls, rows, cols, shift);
+    MatrixMultiGpuSequentialExample(accls, rows, cols, shift);
 
     const int iter = 10;
     std::wcout << std::endl << " Weighted average executing " << iter << " times" << std::endl << std::endl;
 
-    LoopedMatrixMultiGpu(accls, rows, cols, shift, iter);
+    LoopedMatrixMultiGpuExample(accls, rows, cols, shift, iter);
 
-    WorkStealing(accls, rows, cols, shift);
+    WorkStealingExample(accls, rows, cols, shift);
 
+    CompletionFutureExample();
+    
     std::wcout << std::endl << std::endl;
 }
 
@@ -101,7 +107,7 @@ int main()
 //  Examples of enumerating and choosing accelerators
 //--------------------------------------------------------------------------------------
 
-void EnumeratingAccelerators()
+void EnumeratingAcceleratorsExample()
 {
     //  List all the accelerators
 
@@ -194,7 +200,7 @@ void EnumeratingAccelerators()
 //  Example of executing the problem on a single GPU
 //--------------------------------------------------------------------------------------
 
-void MatrixSingleGpu(const int rows, const int cols, const int shift)
+void MatrixSingleGpuExample(const int rows, const int cols, const int shift)
 {
     //  Initialize matrices
 
@@ -240,8 +246,7 @@ struct TaskData
 
     TaskData(accelerator a, int i) : view(a.default_view), id(i) {}
 
-    static std::vector<TaskData> Configure(const std::vector<accelerator>& accls,  
-        int rows, int cols, int shift)
+    static std::vector<TaskData> Configure(const std::vector<accelerator>& accls,  int rows, int cols, int shift)
     {
         std::vector<TaskData> tasks;
         int startRow = 0;
@@ -268,7 +273,7 @@ struct TaskData
 //  Example of partitioning the problem across two or more GPUs using a parallel_for_each
 //--------------------------------------------------------------------------------------
 
-void MatrixMultiGpu(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift)
+void MatrixMultiGpuExample(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift)
 {
     std::vector<TaskData> tasks = TaskData::Configure(accls, rows, cols, shift);
 
@@ -306,7 +311,7 @@ void MatrixMultiGpu(const std::vector<accelerator>& accls, const int rows, const
 #endif
 }
 
-void MatrixMultiGpuSqu(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift)
+void MatrixMultiGpuSequentialExample(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift)
 {
     std::vector<TaskData> tasks = TaskData::Configure(accls, rows, cols, shift);
 
@@ -314,8 +319,8 @@ void MatrixMultiGpuSqu(const std::vector<accelerator>& accls, const int rows, co
 
     std::vector<float> vA(rows * cols);
     std::vector<float> vC(rows * cols);
-    float n = 0.0;
-    std::generate(vA.begin(), vA.end(), [&n]() { return n++; });
+    float v = 0.0;
+    std::generate(vA.begin(), vA.end(), [&v]() { return v++; });
     std::vector<array_view<float, 2>> avCs;
 
     //  Calculation
@@ -354,7 +359,7 @@ void MatrixMultiGpuSqu(const std::vector<accelerator>& accls, const int rows, co
 //--------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------
 
-void LoopedMatrixMultiGpu(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift, const int iter)
+void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift, const int iter)
 {
     std::vector<TaskData> tasks = TaskData::Configure(accls, rows, cols, shift);
 
@@ -362,8 +367,8 @@ void LoopedMatrixMultiGpu(const std::vector<accelerator>& accls, const int rows,
 
     std::vector<float> vA(rows * cols);
     std::vector<float> vC(rows * cols);
-    float n = 0.0;
-    std::generate(vA.begin(), vA.end(), [&n]() { return n++; });
+    float v = 0.0;
+    std::generate(vA.begin(), vA.end(), [&v]() { return v++; });
 
     std::vector<array<float, 2>> arrAs;
     std::vector<array<float, 2>> arrCs;
@@ -419,14 +424,14 @@ void LoopedMatrixMultiGpu(const std::vector<accelerator>& accls, const int rows,
             std::swap(arrAs, arrCs);
         }
 
-        array_view<float, 2> c(rows, cols, vC);
-        std::for_each(tasks.crbegin(), tasks.crend(), [=, &arrAs, &c](const TaskData& t)
-        {
-            index<2> ind(t.writeOffset, shift);
-            extent<2> ext(t.writeExt[0], t.writeExt[1] - shift * 2);
-            array_view<float, 2> outData = c.section(ind, ext); 
-            arrAs[t.id].section(ind, ext).copy_to(outData);
-        });
+    array_view<float, 2> c(rows, cols, vC);
+    std::for_each(tasks.crbegin(), tasks.crend(), [=, &arrAs, &c](const TaskData& t)
+    {
+        index<2> ind(t.writeOffset, shift);
+        extent<2> ext(t.writeExt[0], t.writeExt[1] - shift * 2);
+        array_view<float, 2> outData = c.section(ind, ext); 
+        arrAs[t.id].section(ind, ext).copy_to(outData);
+    });
     });
     std::wcout << " " << tasks.size() << " GPU matrix weighted average took                               " << time << " (ms)" << std::endl;
 #ifdef _DEBUG
@@ -443,7 +448,7 @@ inline int GetStart(Task t) { return t.first; }
 inline int GetEnd(Task t) { return t.first + t.second; }
 inline int GetSize(Task t) { return t.second; }
 
-void WorkStealing(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift)
+void WorkStealingExample(const std::vector<accelerator>& accls, const int rows, const int cols, const int shift)
 {
     critical_section critSec;               // Only required for correct wcout formatting.
 
@@ -508,6 +513,31 @@ void WorkStealing(const std::vector<accelerator>& accls, const int rows, const i
 }
 
 //--------------------------------------------------------------------------------------
+//  Example showing the use of a completion_future.
+//--------------------------------------------------------------------------------------
+
+// http://msdn.microsoft.com/en-us/library/hh966736(v=vs.110).aspx
+
+void CompletionFutureExample()
+{
+    accelerator accl = accelerator(accelerator::default_accelerator);
+    const int size = !accl.is_emulated ? int(accl.dedicated_memory * 1024 / sizeof(float) * 0.5f) : 1024;
+
+    std::vector<float> vA(size, 0.0f);
+    array<float, 1> arrA(size);
+
+    std::cout << "Data copy of " << size << " bytes starting." << std::endl;
+    completion_future f = copy_async(vA.cbegin(), vA.cend(), arrA);
+    f.then([=] ()
+    { 
+        std::cout << "  Finished asynchronous copy!" << std::endl; 
+    });
+    std::cout << "Do more work on this thread..." << std::endl;
+    f.wait();
+    std::cout << "Data copy completed." << std::endl;
+}
+
+//--------------------------------------------------------------------------------------
 //  Worker function to calculate the weighted average of the surrounding cells
 //--------------------------------------------------------------------------------------
 
@@ -552,7 +582,9 @@ void PrintMatrix(const std::vector<TaskData>& tasks, std::vector<array<float, 2>
     std::vector<float> c(rows * cols, 0.0f);
     std::for_each(tasks.cbegin(), tasks.cend(), [=, &mat, &c](const TaskData& t)
     {
-       std::copy(mat[t.id].data(), mat[t.id].data() + t.writeExt[0] * cols, &c[(t.startRow + t.writeOffset) * cols]);
+       std::copy(stdext::checked_array_iterator<float*>(mat[t.id].data(), rows * cols), 
+           stdext::checked_array_iterator<float*>(mat[t.id].data() + t.writeExt[0] * cols, rows * cols), 
+           stdext::checked_array_iterator<float*>(&c[(t.startRow + t.writeOffset) * cols], rows * cols));
     });
     PrintMatrix(c.data(), rows, cols);
 }
