@@ -21,6 +21,22 @@
 
 using namespace concurrency;
 using namespace concurrency::graphics;
+//===============================================================================
+//  
+//===============================================================================
+
+template<typename T, int Rank>
+void Fill(array<T, Rank>& arr, T value) 
+{ 
+    parallel_for_each(arr.extent, [&arr, value](index<Rank> idx) restrict(amp)
+    {
+        arr[idx] = value; 
+    }); 
+}
+
+//===============================================================================
+//  Templatized vector length function.
+//===============================================================================
 
 //  The length() function for N > 1.
 

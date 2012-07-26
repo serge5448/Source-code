@@ -31,16 +31,16 @@ using namespace concurrency::graphics;
 using namespace concurrency::graphics::direct3d;
 using namespace concurrency::direct3d;
 
-void NormAndUnorm();
-void ShortVectors();
-void TextureCopy();
-void TextureReading();
-void TextureReadingChars();
-void TextureWriting();
-void TextureReadingAndWriting();
-void TextureReadingAndWritingWithViews();
-void InteropFromD3D();
-void InteropToD3D();
+void NormAndUnormExample();
+void ShortVectorsExample();
+void TextureCopyExample();
+void TextureReadingExample();
+void TextureReadingCharsExample();
+void TextureWritingExample();
+void TextureReadingAndWritingExample();
+void TextureReadingAndWritingWithViewsExample();
+void InteropFromD3DExample();
+void InteropToD3DExample();
 
 int main()
 {
@@ -52,20 +52,20 @@ int main()
             "To see better performance run on C++ AMP\ncapable hardware." << std::endl;
 #endif
 
-    NormAndUnorm();
-    ShortVectors();
-    TextureCopy();
-    TextureReading();
-    TextureReadingChars();
-    TextureWriting();
-    TextureReadingAndWriting();
-    TextureReadingAndWritingWithViews();
-    InteropFromD3D();
-    InteropToD3D();
+    NormAndUnormExample();
+    ShortVectorsExample();
+    TextureCopyExample();
+    TextureReadingExample();
+    TextureReadingCharsExample();
+    TextureWritingExample();
+    TextureReadingAndWritingExample();
+    TextureReadingAndWritingWithViewsExample();
+    InteropFromD3DExample();
+    InteropToD3DExample();
     return 0;
 }
 
-void NormAndUnorm()
+void NormAndUnormExample()
 {
     unorm val1;
     std::wcout << "val1 = " << val1 << std::endl;
@@ -83,7 +83,7 @@ void NormAndUnorm()
     std::wcout << "val7 = " << val7 << std::endl;
 }
 
-void ShortVectors()
+void ShortVectorsExample()
 {
     //  Construction
 
@@ -110,7 +110,7 @@ void ShortVectors()
     std::wcout << "length(vec5) = " << length(vec5) << std::endl;
 }
 
-void TextureCopy()
+void TextureCopyExample()
 {
     const int cols = 32;
     const int rows = 64;
@@ -144,7 +144,7 @@ void TextureCopy()
     std::wcout << "Copy complete" << std::endl;
 }
 
-void TextureReading()
+void TextureReadingExample()
 {
     const int cols = 32;
     const int rows = 64;
@@ -171,7 +171,7 @@ void TextureReading()
     std::wcout << "accelerator: " << inputTx.accelerator_view.accelerator.description << std::endl;
 }
 
-void TextureReadingChars()
+void TextureReadingCharsExample()
 {
     const UINT bitsPerScalarElement = 8u;
     const int size = 1024;
@@ -189,7 +189,7 @@ void TextureReadingChars()
     });
 }
 
-void TextureWriting()
+void TextureWritingExample()
 {
     const int cols = 32;
     const int rows = 64;
@@ -204,7 +204,7 @@ void TextureWriting()
     });
 }
 
-void TextureReadingAndWriting()
+void TextureReadingAndWritingExample()
 {
     const int cols = 32;
     const int rows = 64;
@@ -223,7 +223,7 @@ void TextureReadingAndWriting()
     });
 }
 
-void TextureReadingAndWritingWithViews()
+void TextureReadingAndWritingWithViewsExample()
 {
     const int cols = 32;
     const int rows = 64;
@@ -236,7 +236,7 @@ void TextureReadingAndWritingWithViews()
     });
 }
 
-void InteropFromD3D()
+void InteropFromD3DExample()
 { 
     //  Get a D3D device from an accelerator_view.
 
@@ -264,7 +264,7 @@ void InteropFromD3D()
 
 }
 
-void InteropToD3D()
+void InteropToD3DExample()
 {
     //  Create an accelerator_view from a D3D device.
 
