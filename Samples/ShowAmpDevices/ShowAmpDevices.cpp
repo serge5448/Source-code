@@ -17,10 +17,9 @@ int _tmain(int argc, _TCHAR* argv[])
     int n = 0;
     std::for_each(accls.cbegin(), accls.cend(), [=, &n](const accelerator& a)
     {
-        std::wcout << "  " << n << ": " << a.description 
+        std::wcout << "  " << ++n << ": " << a.description 
             << ", has_display=" << (a.has_display ? "true" : "false") 
             << ", is_emulated=" << (a.is_emulated ? "true" : "false") << std::endl;
     });
 	return 0;
 }
-
