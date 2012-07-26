@@ -14,62 +14,83 @@
 // PARTICULAR PURPOSE.
 //===============================================================================
 
+// Demonstrates how to use C++ AMP to do matrix multiply.
+
 #include <iostream>
+#include <algorithm>
+#include <random>
 #include <amp.h>
-#include <math.h>
 
 #include "Timer.h"
 
-using namespace Concurrency;
-using std::vector;
+using namespace concurrency;
 
-void InitializeArray(vector<float> &vM, int size)
+class Multiply
 {
-    for(int i=0; i<size; ++i)
-    {
-        vM[i] = (float)rand() / (float)(RAND_MAX + 1);
-    }
-}
+private:
+    array_view<const float, 2> m_mA; 
+    array_view<const float, 2> m_mB; 
+    array_view<float, 2> m_mC;
+    int m_W;
 
+public:
+    Multiply(const array_view<const float, 2>& a,
+             const array_view<const float, 2>& b,
+             const array_view<float, 2>& c,
+             int w) : m_mA(a), m_mB(b), m_mC(c), m_W(w)
+    {}
+
+    void operator()(index<2> idx) const restrict(amp)
+    {
+        int row = idx[0]; int col = idx[1];
+        float sum = 0.0f;
+        for(int i = 0; i < m_W; i++)
+            sum += m_mA(row, i) * m_mB(i, col);
+        m_mC[idx] = sum;
+    }
+};
 
 int main()
 {
-    srand(2010);
-
     const int M = 64;
     const int N = 64;
     const int W = 64;
 
-    accelerator defaultacc (accelerator::default_accelerator);
-    accelerator_view defaultView = defaultacc.default_view;
+    accelerator defaultDevice(accelerator::default_accelerator);
+    accelerator_view defaultView = defaultDevice.default_view;
 
 #ifndef _DEBUG
-    std::vector<accelerator> allAccelerators = accelerator::get_all();
-    allAccelerators.erase(std::remove_if(allAccelerators.begin(), allAccelerators.end(), 
-        [](const accelerator& acc){ return (acc.is_emulated) || (acc.device_path == accelerator::cpu_accelerator);} ),allAccelerators.end());
-
-    if (allAccelerators.size() > 0)
-        defaultView = allAccelerators[0].default_view;
+    std::wcout << L" Using device : " << defaultDevice.get_description() << std::endl;
+    if (defaultDevice == accelerator(accelerator::direct3d_ref))
+        std::wcout << " WARNING!! No C++ AMP hardware accelerator detected, using the REF accelerator." << std::endl << 
+            "To see better performance run on C++ AMP\ncapable hardware." << std::endl;
 #endif
 
-    vector<float> vA(M * W);
-    vector<float> vB(W * N);
-    vector<float> vC(M * N);
-    vector<float> vRef(M * N);
+    std::vector<float> vA(M * W);
+    std::vector<float> vB(W * N);
+    std::vector<float> vC(M * N);
+    std::vector<float> vRef(M * N);
 
-    InitializeArray(vA, M * W);
-    InitializeArray(vB, W * N);
+    std::random_device rd; 
+    std::default_random_engine engine(rd()); 
+    std::uniform_real_distribution<float> rand(0.0f, 1.0f);
+
+    std::generate(vA.begin(), vA.end(), [&rand, &engine](){ return rand(engine); });
+    std::generate(vB.begin(), vB.end(), [&rand, &engine](){ return rand(engine); });
+
+    //--------------------------------------------------------------------------------------
+    //  CPU matrix multiply
+    //--------------------------------------------------------------------------------------
 
     double elapsedTime = TimeFunc([&]()
     {
-        // Compute mxm on CPU
-        for(int row=0; row<M; ++row)
+        for(int row = 0; row < M; ++row)
         {
-            for(int col=0; col<N; ++col)
+            for(int col = 0; col < N; ++col)
             {
                 float result = 0.0f;
 
-                for(int i=0; i<W; ++i)
+                for(int i = 0; i < W; ++i)
                 {
                     int idxA = row * W + i;
                     int idxB = i * N + col;
@@ -84,6 +105,10 @@ int main()
 
     std::wcout << "CPU exec time: " << elapsedTime << " (ms)" << std::endl << std::endl;
 
+    //--------------------------------------------------------------------------------------
+    //  GPU non tiled matrix multiply with functors
+    //--------------------------------------------------------------------------------------
+
     elapsedTime = TimeFunc([&]()
     {
         extent<2> eA(M, W), eB(W, N), eC(M, N);
@@ -92,7 +117,24 @@ int main()
         array_view<float, 2> mC(eC, vC);
 
         mC.discard_data();
-        parallel_for_each(defaultView,extent<2>(eC), [=](index<2> idx) restrict(amp)
+        parallel_for_each(defaultView, extent<2>(eC), Multiply(mA, mB, mC, W));
+
+        mC.synchronize();
+    });
+
+    //--------------------------------------------------------------------------------------
+    //  GPU non tiled matrix multiply
+    //--------------------------------------------------------------------------------------
+
+    elapsedTime = TimeFunc([&]()
+    {
+        extent<2> eA(M, W), eB(W, N), eC(M, N);
+        array_view<float, 2> mA(eA, vA); 
+        array_view<float, 2> mB(eB, vB); 
+        array_view<float, 2> mC(eC, vC);
+
+        mC.discard_data();
+        parallel_for_each(defaultView, extent<2>(eC), [=](index<2> idx) restrict(amp)
         {
             float result = 0.0f;
 
@@ -112,22 +154,23 @@ int main()
 
     std::wcout << "GPU exec time (non tiled) including copy-in/out: " << elapsedTime << " (ms)" << std::endl << std::endl;
 
-    // Compare GPU non tiled and CPU results
-    bool passed = true;
+    // Compare GPU non tiled and CPU resulTileSize
 
-    for (int i=0; i<M * N; ++i)
+    auto firstMismatch = std::mismatch(vC.cbegin(), vC.cend(), vRef.cbegin(), [](float c, float r) { return (fabs(c - r) < 0.01); });
+    if (firstMismatch.first != vC.end())
     {
-        if (fabs(vC[i] - vRef[i]) > 0.01)
-        {
-            std::wcout << "vC[" << i << "] = " << vC[i] << ", vRef[" << i << "] = " << vRef[i] << std::endl;
-            passed = false;
-            break;
-        }
+        size_t i = std::distance(vC.cbegin(), firstMismatch.first);
+        std::wcout << "vC[" << i << "] = " << *firstMismatch.first << ", vRef[" << i << "] = " << *firstMismatch.second << std::endl;
     }
+    std::wcout << " non tiled " << ((firstMismatch.first == vC.end()) ? "PASSED" : "FAILED") << std::endl << std::endl;
 
-    std::wcout << " non tiled " << (passed ? "PASSED" : "FAILED") << std::endl;
+    //--------------------------------------------------------------------------------------
+    //  GPU tiled matrix multiply
+    //--------------------------------------------------------------------------------------
 
-    static const int TS = 16;
+    static const int TileSize = 16;
+
+    static_assert((M % TileSize == 0) && (W % TileSize == 0) && (N % TileSize == 0), "Matrix dimensions must be a multiple of tile size.");
 
     elapsedTime = TimeFunc([&]()
     {
@@ -136,19 +179,19 @@ int main()
         array_view<float,2> c(M, N, vC);
 
         c.discard_data();
-        parallel_for_each(c.extent.tile< TS, TS >(),
-            [=] (tiled_index< TS, TS> tidx) restrict(amp) 
+        parallel_for_each(c.extent.tile<TileSize, TileSize>(),
+            [=] (tiled_index<TileSize, TileSize> tidx) restrict(amp) 
         {
             int row = tidx.local[0]; 
             int col = tidx.local[1];
             float sum = 0.0f;
-            for (int i = 0; i < W; i += TS) 
+            for (int i = 0; i < W; i += TileSize) 
             {
-                tile_static float sA[TS][TS], sB[TS][TS];
+                tile_static float sA[TileSize][TileSize], sB[TileSize][TileSize];
                 sA[row][col] = a(tidx.global[0], col + i);
                 sB[row][col] = b(row + i, tidx.global[1]);
                 tidx.barrier.wait();
-                for (int k = 0; k < TS; k++)
+                for (int k = 0; k < TileSize; k++)
                     sum += sA[row][k] * sB[k][col];
                 tidx.barrier.wait();
             }
@@ -158,23 +201,16 @@ int main()
         c.synchronize();
     });
 
-    std::wcout << "GPU exec time (tiled - tile size is " << TS << ") including copy-in/out: " <<
+    std::wcout << "GPU exec time (tiled - tile size is " << TileSize << ") including copy-in/out: " <<
         elapsedTime << " (ms)" << std::endl << std::endl;
 
     // Compare tiled GPU and CPU results
-    passed = true;
 
-    for (int i=0; i<M * N; ++i)
+    firstMismatch = std::mismatch(vC.cbegin(), vC.cend(), vRef.cbegin(), [](float c, float r) { return (fabs(c - r) < 0.01); });
+    if (firstMismatch.first != vC.end())
     {
-        if (fabs(vC[i] - vRef[i]) > 0.01)
-        {
-            std::wcout << "vC[" << i << "] = " << vC[i] << ", vRef[" << i << "] = " << vRef[i] << std::endl;
-            passed = false;
-            break;
-        }
+        size_t i = std::distance(vC.cbegin(), firstMismatch.first);
+        std::wcout << "vC[" << i << "] = " << *firstMismatch.first << ", vRef[" << i << "] = " << *firstMismatch.second << std::endl;
     }
-
-    std::wcout << " non tiled " << (passed ? "PASSED" : "FAILED") << std::endl;
-
-    return passed ? 0 : 1;
+    std::wcout << " tiled " << ((firstMismatch.first == vC.end()) ? "PASSED" : "FAILED") << std::endl;
 }
