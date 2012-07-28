@@ -46,7 +46,7 @@ public:
 //  Image processing functions used by all C++ AMP image processors.
 //--------------------------------------------------------------------------------------
 
-extent<2> GetTiledExtent(extent<2> ext);
+tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> GetTiledExtent(const extent<2>& ext);
 
 //  Copy images on and off the accelerator.
 

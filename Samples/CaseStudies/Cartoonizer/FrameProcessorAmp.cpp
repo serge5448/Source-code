@@ -39,16 +39,17 @@ const float_3 ImageUtils::W(0.299f, 0.114f, (1.000f - 0.299f - 0.114f));
 
 //  Memory is always accessed most efficiently by contiguous accesses both in CPU and GPU.
 //  Images are stored in row-major order so pixels are addressed as [y][x] or [row][col]. Accessing over the
-//  least significant index first (x) is more efficient.
+//  least significant index first (x) is more efficient. In the following methods height always comes first 
+//  as it corresponds to rows.
 
-extent<2> GetTiledExtent(extent<2> ext)
+//--------------------------------------------------------------------------------------
+//  Pad the extent of the raw image to a tiled_extent that fits the tile size.
+//--------------------------------------------------------------------------------------
+
+tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> GetTiledExtent(const extent<2>& ext)
 {
-    int height = ext[0] + 1;
-    int width = ext[1] + 1;
-    height += FrameProcessorAmp::TileSize - height % FrameProcessorAmp::TileSize;
-    width += FrameProcessorAmp::TileSize - width % FrameProcessorAmp::TileSize;
-
-    return extent<2>(height, width);
+    tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> text(ext + extent<2>(1, 1));
+    return text.pad();
 }
 
 //--------------------------------------------------------------------------------------
@@ -103,8 +104,7 @@ void ApplyColorSimplifierTiledHelper(const array<ArgbPackedPixel, 2>& srcFrame, 
 
     assert(neighborWindow <= FrameProcessorAmp::MaxNeighborWindow);
 
-    extent<2> ext = GetTiledExtent(srcFrame.extent);
-    tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> computeDomain(ext);
+    tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> computeDomain = GetTiledExtent(srcFrame.extent);
     parallel_for_each(computeDomain, [=, &srcFrame, &destFrame](tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx) restrict(amp)
     {
         SimplifyIndexTiled(srcFrame, destFrame, idx, neighborWindow, W);
@@ -287,7 +287,7 @@ void ApplyEdgeDetectionTiledHelper(const array<ArgbPackedPixel, 2>& srcFrame,
     const float a1 = 0.7f;
     extent<2> ext(srcFrame.extent - extent<2>(simplifierNeighborWindow, simplifierNeighborWindow));
 
-    tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> computeDomain(GetTiledExtent(ext));
+    tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> computeDomain = GetTiledExtent(srcFrame.extent);
     parallel_for_each(computeDomain.tile<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize>(), [=, &srcFrame, &destFrame, &orgFrame](tiled_index<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> idx) restrict(amp) 
     {
         DetectEdgeTiled(idx, srcFrame, destFrame, orgFrame, simplifierNeighborWindow, W);
