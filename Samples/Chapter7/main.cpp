@@ -14,8 +14,6 @@
 // PARTICULAR PURPOSE.
 //===============================================================================
 
-#define _ITERATOR_DEBUG_LEVEL  0
-
 #include <amp.h>
 #include <amp_math.h>
 #include <iostream>

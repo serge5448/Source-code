@@ -14,9 +14,6 @@
 // PARTICULAR PURPOSE.
 //===============================================================================
 
-// TODO_AMP: Try and remove all of these.
-#define _ITERATOR_DEBUG_LEVEL  0
-
 #include <amp.h>
 #include <assert.h>
 #include <amp_math.h>
