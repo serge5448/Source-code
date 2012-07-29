@@ -31,6 +31,7 @@ using namespace concurrency;
 void FillExample();
 
 void TransposeExample(int matrixSize);
+void TransposeSimpleExample(int matrixSize);
 void TransposePaddedExample(int matrixSize);
 void TransposeTruncatedExample(int matrixSize);
 void TransposeTruncatedExample2(int matrixSize);
@@ -70,7 +71,11 @@ void CheckMatrix(const T* const data, int size)
         }
 }
 
+#ifdef _DEBUG
+static const int tileSize = 2;
+#else
 static const int tileSize = 32;
+#endif
 
 int main()
 {
@@ -80,7 +85,7 @@ int main()
    
 #ifndef _DEBUG
     accelerator defaultDevice;
-    std::wcout << L" Using device : " << defaultDevice.get_description() << std::endl;
+    std::wcout << L"Using device : " << defaultDevice.get_description() << std::endl;
     if (defaultDevice == accelerator(accelerator::direct3d_ref))
         std::wcout << " WARNING!! No C++ AMP hardware accelerator detected, using the REF accelerator." << std::endl << 
             "To see better performance run on C++ AMP\ncapable hardware." << std::endl;
@@ -88,7 +93,14 @@ int main()
 
     FillExample();
 
-    int size = tileSize * 4;
+#ifdef _DEBUG
+    int size = tileSize * 3;
+#else
+    int size = tileSize * 300;
+#endif
+    TransposeSimpleExample(size);
+    TransposeSimpleExample(size + tileSize);
+
     TransposeExample(size);
     TransposeExample(size + tileSize);
 
@@ -127,6 +139,42 @@ void FillExample()
 }
 
 //--------------------------------------------------------------------------------------
+//  Simple matrix transpose example. Included here for camparison timing.
+//--------------------------------------------------------------------------------------
+
+void TransposeSimpleExample(int matrixSize)
+{ 
+    if (matrixSize % tileSize != 0)
+        throw std::exception("matrix is not a multiple of tile size.");
+
+    std::vector<unsigned int> inData(matrixSize * matrixSize);
+    std::vector<unsigned int> outData(matrixSize * matrixSize, 0);
+    unsigned int v = 0;
+    std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
+
+    array_view<const unsigned int, 2> inDataView(matrixSize, matrixSize, inData);
+    array_view<unsigned int, 2> outDataView(matrixSize, matrixSize, outData);
+    outDataView.discard_data();
+
+    tiled_extent<tileSize, tileSize> computeDomain = inDataView.extent.tile<tileSize, tileSize>();
+    accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
+    double elapsedTime = TimeFunc(view, [&]() 
+    {
+        parallel_for_each(computeDomain, [=](tiled_index<tileSize, tileSize> tidx) restrict(amp)
+        {    
+            outDataView[tidx.global] = inDataView[tidx.global[1]][tidx.global[0]];
+        });
+    });
+    outDataView.synchronize();
+    std::wcout << "Transpose simple exact size" << std::endl;
+    std::wcout << "  Matrix size " << matrixSize << " x " << matrixSize << std::endl;
+    std::wcout << "  Elapsed time " << elapsedTime << " ms" << std::endl;
+    CheckMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
+    PrintMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
+    std::wcout << std::endl;
+}
+
+//--------------------------------------------------------------------------------------
 //  Tiled matrix transpose example.
 //--------------------------------------------------------------------------------------
 
@@ -161,13 +209,12 @@ void TransposeExample(int matrixSize)
     });
     outDataView.synchronize();
     std::wcout << "Transpose exact size" << std::endl;
-    std::wcout << "Matrix size " << matrixSize << " x " << matrixSize << std::endl;
-    std::wcout << "Elapsed time " << elapsedTime << " ms" << std::endl;
+    std::wcout << "  Matrix size " << matrixSize << " x " << matrixSize << std::endl;
+    std::wcout << "  Elapsed time " << elapsedTime << " ms" << std::endl;
     CheckMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     PrintMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     std::wcout << std::endl;
 }
-
 //--------------------------------------------------------------------------------------
 //  Tiled and padded matrix transpose example.
 //--------------------------------------------------------------------------------------
@@ -216,9 +263,9 @@ void TransposePaddedExample(int matrixSize)
     
     outDataView.synchronize();
     std::wcout << "Transpose padded" << std::endl;
-    std::wcout << "Matrix size " << matrixSize << " x " << matrixSize << ", padded size " 
-        << computeDomain[0] << " x " << computeDomain[0] << std::endl;
-    std::wcout << "Elapsed time " << elapsedTime << " ms" << std::endl;
+    std::wcout << "  Matrix size " << matrixSize << " x " << matrixSize << ", padded size " 
+        << computeDomain[0] << " x " << computeDomain[1] << std::endl;
+    std::wcout << "  Elapsed time " << elapsedTime << " ms" << std::endl;
     CheckMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     PrintMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     std::wcout << std::endl;
@@ -242,7 +289,7 @@ void TransposeTruncatedExample(int matrixSize)
     tiled_extent<tileSize, tileSize> computeDomain = inDataView.extent.tile<tileSize, tileSize>();
     computeDomain = computeDomain.truncate();
 
-    // TODO_AMP: TDRs in release mode on RC build.
+    // TODO_AMP: TDRs with /02 on RC build.
     accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
     double elapsedTime = TimeFunc(view, [&]() 
     {
@@ -286,9 +333,10 @@ void TransposeTruncatedExample(int matrixSize)
     });
 
     outDataView.synchronize();
-    std::wcout << "Transpose truncated" << std::endl;
-    std::wcout << "Matrix size " << matrixSize << " x " << matrixSize << std::endl;
-    std::wcout << "Elapsed time " << elapsedTime << " ms" << std::endl;
+    std::wcout << "Transpose truncated, edge thread handles truncated elements" << std::endl;
+    std::wcout << "  Matrix size " << matrixSize << " x " << matrixSize << ", truncated size " 
+        << computeDomain[0] << " x " << computeDomain[1] << std::endl;
+    std::wcout << "  Elapsed time " << elapsedTime << " ms" << std::endl;
     CheckMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     PrintMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     std::wcout << std::endl;
@@ -308,8 +356,8 @@ void TransposeTruncatedExample2(int matrixSize)
     tiled_extent<tileSize, tileSize> computeDomain = inDataView.extent.tile<tileSize, tileSize>();
     computeDomain = computeDomain.truncate();
 
-    const int rightMargin = computeDomain[1] - computeDomain[1];
-    const int bottomMargin = computeDomain[0] - computeDomain[0];
+    const int rightMargin = inDataView.extent[1] - computeDomain[1];
+    const int bottomMargin = inDataView.extent[0] - computeDomain[0];
     accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
     double elapsedTime = TimeFunc(view, [&]() 
     {
@@ -353,9 +401,10 @@ void TransposeTruncatedExample2(int matrixSize)
     });
 
     outDataView.synchronize();
-    std::wcout << "Transpose truncated" << std::endl;
-    std::wcout << "Matrix size " << matrixSize << " x " << matrixSize << std::endl;
-    std::wcout << "Elapsed time " << elapsedTime << " ms" << std::endl;
+    std::wcout << "Transpose truncated, margin threads handle truncated elements" << std::endl;
+    std::wcout << "  Matrix size " << matrixSize << " x " << matrixSize << ", truncated size " 
+        << computeDomain[0] << " x " << computeDomain[1] << std::endl;
+    std::wcout << "  Elapsed time " << elapsedTime << " ms" << std::endl;
     CheckMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     PrintMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     std::wcout << std::endl;
