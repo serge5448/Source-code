@@ -324,8 +324,8 @@ void TransposeTruncatedExample(int matrixSize)
                 }
                 if (isRightMost && isBottomMost) 
                 { 
-                    for (idx0 = computeDomain[0]; idx0 < inDataView.extent[0]; idx0++)
-                        for (idx1 = computeDomain[1]; idx1 < inDataView.extent[1]; idx1++) 
+                    for (idx0 = computeDomain[0] + 1; idx0 < inDataView.extent[0]; idx0++)
+                        for (idx1 = computeDomain[1] + 1; idx1 < inDataView.extent[1]; idx1++) 
                             outDataView(idx1, idx0) = inDataView(idx0, idx1); 
                 }
             }
