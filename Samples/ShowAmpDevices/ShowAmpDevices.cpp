@@ -26,8 +26,14 @@ int _tmain(int argc, _TCHAR* argv[])
 {
     std::vector<accelerator> accls = accelerator::get_all();
     accls.erase(std::remove_if(accls.begin(), accls.end(), [](accelerator& a) { 
-        return a.device_path == accelerator::cpu_accelerator; 
+        return (a.device_path == accelerator::cpu_accelerator) || (a.device_path == accelerator::direct3d_ref); 
     }), accls.end());
+
+    if (accls.empty())
+    {
+        std::wcout << "No accelerators found that are compatible with C++ AMP" << std::endl << std::endl;
+        return 0;
+    }
     std::wcout << std::endl << "Found " << accls.size() 
         << " accelerator device(s) that are compatible with C++ AMP:" << std::endl;
     int n = 0;
@@ -39,5 +45,5 @@ int _tmain(int argc, _TCHAR* argv[])
             << std::endl;
     });
     std::wcout << std::endl;
-	return 0;
+	return 1;
 }
