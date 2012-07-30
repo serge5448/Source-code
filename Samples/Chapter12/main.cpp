@@ -29,6 +29,8 @@
 using namespace concurrency;
 
 void FillExample();
+void AtomicExample();
+void TdrExample();
 
 void TransposeExample(int matrixSize);
 void TransposeSimpleExample(int matrixSize);
@@ -93,6 +95,10 @@ int main()
 
     FillExample();
 
+    AtomicExample();
+
+    //TdrExample();
+
 #ifdef _DEBUG
     int size = tileSize * 3;
 #else
@@ -139,6 +145,88 @@ void FillExample()
 }
 
 //--------------------------------------------------------------------------------------
+//  Atomic example.
+//--------------------------------------------------------------------------------------
+
+void AtomicExample()
+{
+    std::random_device rd; 
+    std::default_random_engine engine(rd()); 
+    std::uniform_real_distribution<float> randDist(0.0f, 1.0f);
+    std::vector<float> theData(100000);
+    std::generate(theData.begin(), theData.end(), [=, &engine, &randDist]() { return randDist(engine); });
+    array_view<float, 1> theDataView(int(theData.size()), theData);
+
+    int exceptionalOccurrences = 0;
+    array_view<int> count(1, &exceptionalOccurrences);
+    parallel_for_each(theDataView.extent, [=] (index<1> idx) restrict(amp)
+    {
+        if (theDataView[idx] >= 0.9999f)  // Exceptional occurence.
+        {
+            atomic_fetch_inc(&count(0));
+        }
+        theDataView[idx] = fast_math::sqrt(theDataView[idx]);
+    });
+    count.synchronize();
+    std::wcout << "Calculating values for " << theData.size() << " elements " << std::endl;
+    std::wcout << "A total of " << exceptionalOccurrences << " exceptional occurrences were detected." 
+        << std::endl;
+}
+
+//--------------------------------------------------------------------------------------
+//  TDR example.
+//--------------------------------------------------------------------------------------
+
+void Compute(std::vector<float>& inData, std::vector<float>& outData, int start, 
+             accelerator& device, queuing_mode mode = queuing_mode::queuing_mode_automatic)
+{
+    array_view<const float, 1> inDataView(int(inData.size()), inData);
+    array_view<float, 1> outDataView(int(outData.size()), outData);
+
+    accelerator_view view = device.create_view(mode);
+    parallel_for_each(view, outDataView.extent, [=](index<1> idx) restrict(amp)
+    {
+        int i = start;
+        while (i < 1024)
+        {
+            outDataView[idx] = inDataView[idx];
+            i *= 2;
+            i = i % 2048;
+        }
+    }); 
+}
+
+void TdrExample()
+{
+    std::vector<float> inData(10000);
+    std::vector<float> outData(10000, 0.0f);
+
+    try
+    {
+        Compute(inData, outData, -1, accelerator());
+    }
+    catch (accelerator_view_removed& ex)
+    {
+        std::wcout << "TDR exception: " << ex.what(); 
+        std::wcout << "  Error code:" << std::hex << ex.get_error_code(); 
+        std::wcout << "  Reason:" << std::hex << ex.get_view_removed_reason();
+
+        std::wcout << "Retrying..." << std::endl;
+        try
+        {
+            Compute(inData, outData, -1, accelerator(), queuing_mode::queuing_mode_immediate);
+        }
+        catch (accelerator_view_removed& ex)
+        {
+            std::wcout << "TDR exception: " << ex.what(); 
+            std::wcout << "  Error code:" << std::hex << ex.get_error_code(); 
+            std::wcout << "  Reason:" << std::hex << ex.get_view_removed_reason();
+            std::wcout << "FAILED." << std::endl;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------
 //  Simple matrix transpose example. Included here for camparison timing.
 //--------------------------------------------------------------------------------------
 
@@ -148,7 +236,7 @@ void TransposeSimpleExample(int matrixSize)
         throw std::exception("matrix is not a multiple of tile size.");
 
     std::vector<unsigned int> inData(matrixSize * matrixSize);
-    std::vector<unsigned int> outData(matrixSize * matrixSize, 0);
+    std::vector<unsigned int> outData(matrixSize * matrixSize, 0u);
     unsigned int v = 0;
     std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
 
@@ -184,7 +272,7 @@ void TransposeExample(int matrixSize)
         throw std::exception("matrix is not a multiple of tile size.");
 
     std::vector<unsigned int> inData(matrixSize * matrixSize);
-    std::vector<unsigned int> outData(matrixSize * matrixSize, 0);
+    std::vector<unsigned int> outData(matrixSize * matrixSize, 0u);
     unsigned int v = 0;
     std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
 
@@ -235,7 +323,7 @@ void PaddedWrite(const array_view<T, Rank>& A, const index<Rank>& idx, const T& 
 void TransposePaddedExample(int matrixSize)
 {
     std::vector<unsigned int> inData(matrixSize * matrixSize);
-    std::vector<unsigned int> outData(matrixSize * matrixSize, 0);
+    std::vector<unsigned int> outData(matrixSize * matrixSize, 0u);
     unsigned int v = 0;
     std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
 
@@ -278,7 +366,7 @@ void TransposePaddedExample(int matrixSize)
 void TransposeTruncatedExample(int matrixSize)
 {
     std::vector<unsigned int> inData(matrixSize * matrixSize);
-    std::vector<unsigned int> outData(matrixSize * matrixSize, 0);
+    std::vector<unsigned int> outData(matrixSize * matrixSize, 0u);
     unsigned int v = 0;
     std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
 
