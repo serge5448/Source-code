@@ -504,7 +504,7 @@ void TransposeTruncatedExample2(int matrixSize)
 }
 
 void SimpleTranspose(const array_view<const unsigned int, 2>& inDataView, 
-                      const array_view<unsigned int, 2>& outDataView)
+                     const array_view<unsigned int, 2>& outDataView)
 {
     outDataView.discard_data();
     parallel_for_each(outDataView.extent, [=] (index<2> idx) restrict(amp) 
@@ -515,10 +515,11 @@ void SimpleTranspose(const array_view<const unsigned int, 2>& inDataView,
 
 template <int TileSize>
 void TiledTranspose(const array_view<const unsigned int, 2>& inDataView, 
-                          const array_view<unsigned int, 2>& outDataView)
+                    const array_view<unsigned int, 2>& outDataView)
 {
     outDataView.discard_data();
-    parallel_for_each(outDataView.extent.tile<TileSize, TileSize>(), [=] (tiled_index<TileSize, TileSize> tidx) restrict(amp) 
+    parallel_for_each(outDataView.extent.tile<TileSize, TileSize>(), 
+        [=] (tiled_index<TileSize, TileSize> tidx) restrict(amp) 
     {
         tile_static unsigned int localData[tileSize][tileSize];
         localData[tidx.local[1]][tidx.local[0]] = inDataView[tidx.global];
@@ -546,27 +547,27 @@ void TransPoseTruncatedSectionsExample(int matrixSize)
     accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
     double elapsedTime = TimeFunc(view, [&]() 
     {
-        array_view<const unsigned int, 2> fromData  = inDataView.section(index<2>(0,0), truncatedDomain);
-        array_view<unsigned int, 2> toData = outDataView.section(index<2>(0,0), extent<2>(truncatedDomain[1], truncatedDomain[0]));
-        TiledTranspose<tileSize>(fromData, toData);
+    array_view<const unsigned int, 2> fromData  = inDataView.section(index<2>(0,0), truncatedDomain);
+    array_view<unsigned int, 2> toData = outDataView.section(index<2>(0,0), extent<2>(truncatedDomain[1], truncatedDomain[0]));
+    TiledTranspose<tileSize>(fromData, toData);
 
-        if (isBottomTruncated)                  // Areas B.
-        {
-            index<2> offset(truncatedDomain[0],0);
-            extent<2> ext(inDataView.extent[0] - truncatedDomain[0], truncatedDomain[1]);
-            fromData  = inDataView.section(offset, ext);
-            toData = outDataView.section(index<2>(offset[1], offset[0]), extent<2>(ext[1], ext[0]));
-            SimpleTranspose(fromData, toData);
-        }
-        if (isRightTruncated)                  // Area A & C.
-        {
-            index<2> offset(0, truncatedDomain[1]);
-            fromData  = inDataView.section(offset);
-            toData = outDataView.section(index<2>(offset[1], offset[0]));
-            SimpleTranspose(fromData, toData);
-        }
+    if (isBottomTruncated)                  // Areas B.
+    {
+        index<2> offset(truncatedDomain[0],0);
+        extent<2> ext(inDataView.extent[0] - truncatedDomain[0], truncatedDomain[1]);
+        fromData  = inDataView.section(offset, ext);
+        toData = outDataView.section(index<2>(offset[1], offset[0]), extent<2>(ext[1], ext[0]));
+        SimpleTranspose(fromData, toData);
+    }
+    if (isRightTruncated)                  // Area A & C.
+    {
+        index<2> offset(0, truncatedDomain[1]);
+        fromData  = inDataView.section(offset);
+        toData = outDataView.section(index<2>(offset[1], offset[0]));
+        SimpleTranspose(fromData, toData);
+    }
 
-        outDataView.synchronize();
+    outDataView.synchronize();
     });
 
     std::wcout << "Transpose truncated, using sections handle each area" << std::endl;
