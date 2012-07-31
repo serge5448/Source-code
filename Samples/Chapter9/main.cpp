@@ -159,11 +159,13 @@ void EnumeratingAcceleratorsExample()
             return !a.is_emulated && (a.dedicated_memory >= 1024) && a.has_display; 
         });
     if (usefulAccls != accls.end())
+    {
+        std::wcout << "  Default accelerator is now: " 
+            << accelerator(accelerator::default_accelerator).description << std::endl;
         accelerator::set_default(usefulAccls->device_path);
+    }
     else
         std::wcout << "  No suitable accelerator available" << std::endl;
-    std::wcout << "  Default accelerator is now: " 
-        << accelerator(accelerator::default_accelerator).description << std::endl;
 
     accls = accelerator::get_all();
     accls.erase(std::remove_if(accls.begin(), accls.end(), [](accelerator& a)
@@ -217,12 +219,14 @@ void MatrixSingleGpuExample(const int rows, const int cols, const int shift)
         array_view<const float, 2> a(rows, cols, vA); 
         array_view<float, 2> c(rows, cols, vC);
         c.discard_data();
+
         extent<2> ext(rows - shift * 2, cols - shift * 2);
         parallel_for_each(view, ext, [=](index<2> idx) restrict(amp)
         {
             index<2> idc(idx[0] + shift, idx[1] + shift);
             c[idc] = WeightedAverage(idc, a, shift);
         });
+        c.synchronize();
     });
 
     std::wcout << " Single GPU matrix weighted average took                          " << time << " (ms)" << std::endl;
@@ -255,16 +259,15 @@ struct TaskData
         std::for_each(accls.cbegin(), accls.cend(), [=, &tasks, &i, &startRow](const accelerator& a)
         {
             TaskData t(a, i++);
-
             t.startRow = std::max(0, startRow - shift);
             int endRow = std::min(startRow + rowsPerTask + shift, rows);
             t.readExt = extent<2>(endRow - t.startRow, cols);
             t.writeOffset = shift;
-            t.writeExt = extent<2>(t.readExt[0] - shift - ((endRow == rows || startRow == 0) ? shift : 0), cols);
+            t.writeExt = 
+                extent<2>(t.readExt[0] - shift - ((endRow == rows || startRow == 0) ? shift : 0), cols);
             tasks.push_back(t);
             startRow += rowsPerTask;
         });
-
         return tasks;
     }
 };
@@ -323,8 +326,8 @@ void MatrixMultiGpuSequentialExample(const std::vector<accelerator>& accls, cons
 
     std::vector<float> vA(rows * cols);
     std::vector<float> vC(rows * cols);
-    float v = 0.0;
-    std::generate(vA.begin(), vA.end(), [&v]() { return v++; });
+    float n = 0.0;
+    std::generate(vA.begin(), vA.end(), [&n]() { return n++; });
     std::vector<array_view<float, 2>> avCs;
 
     //  Calculation
@@ -372,8 +375,8 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
 
     std::vector<float> vA(rows * cols);
     std::vector<float> vC(rows * cols);
-    float v = 0.0;
-    std::generate(vA.begin(), vA.end(), [&v]() { return v++; });
+    float n = 0.0;
+    std::generate(vA.begin(), vA.end(), [&n]() { return n++; });
 
     std::vector<array<float, 2>> arrAs;
     std::vector<array<float, 2>> arrCs;
@@ -386,7 +389,8 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
 
     // Create swap array on CPU accelerator
 
-    array<float, 2> swap = array<float, 2>(extent<2>(shift, cols), accelerator(accelerator::cpu_accelerator).default_view);
+    array<float, 2> swap = array<float, 2>(extent<2>(shift, cols), 
+        accelerator(accelerator::cpu_accelerator).default_view);
     array_view<float, 2> swapView = array_view<float, 2>(swap);
 
     //  Calculation
@@ -458,8 +462,8 @@ void WorkStealingExample(const std::vector<accelerator>& accls, const int rows, 
     critical_section critSec;               // Only required for correct wcout formatting.
 
 #ifdef _DEBUG
-    const int dataSize = 101000;     
-    const int taskSize = dataSize / 20;
+    const size_t dataSize = 101000;     
+    const size_t taskSize = dataSize / 20;
 #else
     const size_t dataSize = 1000000;
     const size_t taskSize = 10000;
