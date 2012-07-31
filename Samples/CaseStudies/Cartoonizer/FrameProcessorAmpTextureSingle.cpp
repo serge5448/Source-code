@@ -153,6 +153,9 @@ void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const writeonly_texture_v
 //--------------------------------------------------------------------------------------
 //  Edge detection.
 //--------------------------------------------------------------------------------------
+//
+//  See the following Wikipedia page on the Canny edge detector for a further description 
+//  of the algorithm.
 
 void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame, 
                         texture<uint_4, 2>& destFrame, const texture<uint_4, 2>& orgFrame, 
