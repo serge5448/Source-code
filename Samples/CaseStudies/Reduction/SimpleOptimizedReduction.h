@@ -37,8 +37,8 @@ class SimpleOptimizedReduction : public IReduce
 public:
     int Reduce(accelerator_view& view, const std::vector<int>& source, double& computeTime) const
     {
-        const unsigned windowWidth = 8;
-        unsigned elementCount = static_cast<unsigned>(source.size());
+        const int windowWidth = 8;
+        int elementCount = static_cast<unsigned>(source.size());
 
         // Using array as temporary memory.
         array<int, 1> a(elementCount, source.cbegin(), source.cend(), view);
@@ -46,32 +46,33 @@ public:
         // Takes care of the sum of tail elements.
         int tailSum = 0;
         if ((elementCount % windowWidth) != 0 && elementCount > windowWidth)
-            tailSum = std::accumulate(source.begin() + ((elementCount - 1) / windowWidth) * windowWidth, source.end(), 0);
+            tailSum = 
+                std::accumulate(source.begin() + ((elementCount - 1) / windowWidth) * windowWidth, 
+                    source.end(), 0);
 
         array_view<int, 1> avTailSum(1, &tailSum);
 
         // Each thread reduces windowWidth elements.
-        unsigned prevStride = elementCount;
+        int prevStride = elementCount;
         int result;
         computeTime = TimeFunc(view, [&]() 
         {
-            for (unsigned stride = (elementCount / windowWidth); stride > 0; stride /= windowWidth)
+            for (int stride = (elementCount / windowWidth); stride > 0; stride /= windowWidth)
             {
                 parallel_for_each(view, extent<1>(stride), [=, &a] (index<1> idx) restrict(amp)
                 {
                     int sum = 0;
-                    for (unsigned i = 0; i < windowWidth; i++)
+                    for (int i = 0; i < windowWidth; i++)
                         sum += a[idx + i * stride];
                     a[idx] = sum;
 
                     // Reduce the tail in cases where the number of elements is not divisible.
                     // Note: execution of this section may negatively affect the performance.
                     // In production code the problem size passed to the reduction should
-                    // be a power of the windowWidth. Please refer to the blog post for more
-                    // information.
+                    // be a power of the windowWidth. 
                     if ((idx[0] == (stride - 1)) && ((stride % windowWidth) != 0) && (stride > windowWidth))
                     {
-                        for(unsigned i = ((stride - 1) / windowWidth) * windowWidth; i < stride; i++)
+                        for(int i = ((stride - 1) / windowWidth) * windowWidth; i < stride; i++)
                             avTailSum[0] += a[i];
                     }
                 });

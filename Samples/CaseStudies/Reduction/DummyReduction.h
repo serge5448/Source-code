@@ -26,5 +26,8 @@
 class DummyReduction : public IReduce
 {
 public:
-    int Reduce(accelerator_view& view, const std::vector<int>& source, double& computeTime) const { return int(source.size() / 16) * ((15 * 16) / 2); }
+    int Reduce(accelerator_view& view, const std::vector<int>& source, double& computeTime) const 
+    { 
+        return int(source.size() / 16) * ((15 * 16) / 2); 
+    }
  };

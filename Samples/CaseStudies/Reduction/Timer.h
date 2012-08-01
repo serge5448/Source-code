@@ -27,6 +27,11 @@ inline double ElapsedTime(const LARGE_INTEGER& start, const LARGE_INTEGER& end)
     return (double(end.QuadPart) - double(start.QuadPart)) * 1000.0 / double(freq.QuadPart);
 }
 
+//  Note that this version of timer.h is different from the other versions include in the samples.
+//  It has an additional requirement. The case study needs to be able to call use TimeFunc to time
+//  subsections of the calculation without forcing a JIT. TimeFunc is always called within further 
+//  down the call stack from JitAndTimeFunc with the same function to JIT'ing has already happened.
+
 template <typename Func>
 double JitAndTimeFunc(accelerator_view& view, Func f)
 {

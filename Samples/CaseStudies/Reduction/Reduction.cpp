@@ -14,11 +14,7 @@
 // PARTICULAR PURPOSE.
 //===============================================================================
 
-//  In order to add code markers to the project 
-//
-//  1) Select Analyze | Concurrency Visualizer | Add SDK to Project... 
-//
-//  2) Uncomment the definition below.
+//  In order to remove code markers from the project comment out the definition below.
 //
 #define MARKERS
 
@@ -72,17 +68,21 @@ void main()
 
     // Make sure that elements can be split into tiles so the number of
     // tiles in any dimension is less than 65536. 
-    static_assert((elementCount / tileSize < 65536), "Workload is too large or tiles are too small. This will cause runtime errors.");
-    static_assert((elementCount % (tileSize * tileCount) == 0), "Tile size and count are not matched to element count. This will cause runtime errors.");
+    static_assert((elementCount / tileSize < 65536), 
+        "Workload is too large or tiles are too small. This will cause runtime errors.");
+    static_assert((elementCount % (tileSize * tileCount) == 0), 
+        "Tile size and count are not matched to element count. This will cause runtime errors.");
     static_assert((elementCount != 0), "Number of elements cannot be zero.");
     static_assert((elementCount <= UINT_MAX), "Number of elements is too large.");
 
-    std::wcout << "Running kernels with " << elementCount << " elements, " << elementCount * sizeof(int) / 1024 << " KB of data ..."  << std::endl;    
+    std::wcout << "Running kernels with " << elementCount << " elements, " 
+        << elementCount * sizeof(int) / 1024 << " KB of data ..."  << std::endl;    
     std::wcout << "Tile size:     " << tileSize << std::endl;
     std::wcout << "Tile count:    " << tileCount << std::endl;
 
     if (!validateSizes(tileSize, elementCount))
-        std::wcout << "Tile size is not factor of element count. This will cause runtime errors." << std::endl; 
+        std::wcout << "Tile size is not factor of element count. This will cause runtime errors." 
+        << std::endl; 
 
     accelerator defaultDevice;
     std::wcout << L"Using device : " << defaultDevice.get_description() << std::endl;
@@ -141,7 +141,8 @@ void main()
         }
         if (expectedResult != result)
         {
-            std::wcout << "FAILED:  " << reducerName << " expected " << expectedResult << std::endl << "         but found " << result << std::endl;
+            std::wcout << "FAILED:  " << reducerName << " expected " << expectedResult << std::endl 
+                << "         but found " << result << std::endl;
             continue;
         }
         
