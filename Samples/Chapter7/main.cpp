@@ -505,6 +505,16 @@ double PreciseSqrt(double x) restrict(amp, cpu)
     return sqrt(x);
 }
 
+double PreciseSqrtAmp(double x) restrict(amp)
+{
+    return concurrency::precise_math::sqrt(x);
+}
+
+double PreciseSqrtCpu(double x) // restrict(cpu) implicit
+{
+    return sqrt(x); // cmath math function.
+}
+
 float FastSqrt(float x) restrict(amp)
 {
     return concurrency::fast_math::sqrtf(x);
