@@ -249,15 +249,15 @@ void InitApp()
 
     std::wstring processorNames[] =
     {
-         std::wstring(L"C++ AMP Simple Model "),                // kCpuSingle
-         std::wstring(L"C++ AMP Tiled Model 64 "),  
-         std::wstring(L"C++ AMP Tiled Model 128 "),
-         std::wstring(L"C++ AMP Tiled Model 256 "),
-         std::wstring(L"C++ AMP Tiled Model 512 "),             // kSingleTile512
-         std::wstring(L"C++ AMP Tiled Model 64: xx GPUs"),      // kMultiTile64
-         std::wstring(L"C++ AMP Tiled Model 128:xx GPUs"),
-         std::wstring(L"C++ AMP Tiled Model 256:xx GPUs"),
-         std::wstring(L"C++ AMP Tiled Model 512:xx GPUs")       // kMultiTile512
+        std::wstring(L"C++ AMP Simple Model "),                // kCpuSingle
+        std::wstring(L"C++ AMP Tiled Model 64 "),  
+        std::wstring(L"C++ AMP Tiled Model 128 "),
+        std::wstring(L"C++ AMP Tiled Model 256 "),
+        std::wstring(L"C++ AMP Tiled Model 512 "),             // kSingleTile512
+        std::wstring(L"C++ AMP Tiled Model 64: xx GPUs"),      // kMultiTile64
+        std::wstring(L"C++ AMP Tiled Model 128:xx GPUs"),
+        std::wstring(L"C++ AMP Tiled Model 256:xx GPUs"),
+        std::wstring(L"C++ AMP Tiled Model 512:xx GPUs")       // kMultiTile512
     };
 
     WCHAR buf[3];
@@ -387,31 +387,40 @@ std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type)
     switch (type)
     {
     case kSingleSimple:
-        return std::make_shared<NBodyAmpSimple>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass);
+        return std::make_shared<NBodyAmpSimple>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass);
         break;
     case kSingleTile64:
-        return std::make_shared<NBodyAmpTiled<64>>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass);
+        return std::make_shared<NBodyAmpTiled<64>>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass);
         break;
     case kSingleTile128:
-        return std::make_shared<NBodyAmpTiled<128>>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass);
+        return std::make_shared<NBodyAmpTiled<128>>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass);
         break;
     case kSingleTile256:
-        return std::make_shared<NBodyAmpTiled<256>>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass);
+        return std::make_shared<NBodyAmpTiled<256>>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass);
         break;
     case kSingleTile512:
-        return std::make_shared<NBodyAmpTiled<512>>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass);
+        return std::make_shared<NBodyAmpTiled<512>>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass);
         break;
     case kMultiTile64:
-        return std::make_shared<NBodyAmpMultiTiled<64>>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass, g_maxParticles);
+        return std::make_shared<NBodyAmpMultiTiled<64>>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass, g_maxParticles);
         break;
     case kMultiTile128:
-        return std::make_shared<NBodyAmpMultiTiled<128>>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass, g_maxParticles);
+        return std::make_shared<NBodyAmpMultiTiled<128>>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass, g_maxParticles);
         break;
     case kMultiTile256:
-        return std::make_shared<NBodyAmpMultiTiled<256>>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass, g_maxParticles);
+        return std::make_shared<NBodyAmpMultiTiled<256>>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass, g_maxParticles);
         break;
     case kMultiTile512:
-        return std::make_shared<NBodyAmpMultiTiled<512>>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass, g_maxParticles);
+        return std::make_shared<NBodyAmpMultiTiled<512>>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass, g_maxParticles);
         break;
     default:
         assert(false);
@@ -507,7 +516,7 @@ bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* p
 // OnFrameRender callback.  
 //--------------------------------------------------------------------------------------
 
-void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext )
+void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext)
 {
     g_pNBody->Integrate(g_deviceData, g_numParticles);
 

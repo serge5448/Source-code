@@ -58,7 +58,8 @@ public:
 
     //  Calculate interactions for a subset of particles in particlesIn, [rangeStart, rangeStart + rangeSize)
 
-    void TiledBodyBodyInteraction(const ParticlesAmp& particlesIn, ParticlesAmp& particlesOut, int rangeStart, int rangeSize, int numParticles) const
+    void TiledBodyBodyInteraction(const ParticlesAmp& particlesIn, ParticlesAmp& particlesOut, 
+        int rangeStart, int rangeSize, int numParticles) const
     {
         assert(particlesIn.size() == particlesOut.size());
         assert(rangeSize > 0);

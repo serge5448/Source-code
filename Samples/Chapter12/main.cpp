@@ -219,7 +219,7 @@ void TdrExample()
         std::wcout << "Retrying..." << std::endl;
         try
         {
-            Compute(inData, outData, -1, accelerator(), queuing_mode::queuing_mode_immediate);
+            Compute(inData, outData, 1, accelerator(), queuing_mode::queuing_mode_immediate);
         }
         catch (accelerator_view_removed& ex)
         {
