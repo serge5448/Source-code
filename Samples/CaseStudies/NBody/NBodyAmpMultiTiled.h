@@ -57,37 +57,34 @@ public:
         const int tileSize = m_engine.TileSize();
         const size_t numAccs = particleData.size();
         const int rangeSize = ((numParticles / tileSize) / int(numAccs)) * tileSize;
-        std::vector<completion_future> copyResult(2 * numAccs);
+        std::vector<completion_future> copyResults(2 * numAccs);
 
-        // Update range of particles on each accelerator
+        // Update range of particles on each accelerator using the same tiled implementation as NBodyAmpTiled
+        // Copy the results back to the CPU so they can be swapped with other GPUs.
 
-        for (size_t i = 0; i < numAccs; ++i)
-            m_engine.TiledBodyBodyInteraction((*particleData[i]->DataOld), (*particleData[i]->DataNew), int(i * rangeSize), rangeSize, numParticles);
-
-        // Copy updated particles from each accelerator back into host memory.
-        // Use asynchronous copies to reduce the latency by queueing all copies in parallel.
-
-        for (size_t i = 0; i < numAccs; ++i)
+        parallel_for(0u, numAccs, [=, this, &copyResults](int i)
         {
             const int rangeStart = static_cast<int>(i) * rangeSize;
-            index<1> begin(rangeStart);
-            extent<1> end(rangeSize);
-            array_view<float_3, 1> posSrc = particleData[i]->DataNew->pos.section(begin, end);
-            copyResult[i] = copy_async(posSrc, m_hostPos.begin() + rangeStart); 
-            array_view<float_3, 1> velSrc = particleData[i]->DataNew->vel.section(begin, end);
-            copyResult[i + numAccs] = copy_async(velSrc, m_hostVel.begin() + rangeStart); 
-        }
+            m_engine.TiledBodyBodyInteraction((*particleData[i]->DataOld), (*particleData[i]->DataNew), rangeStart, rangeSize, numParticles);
+            array_view<float_3, 1> posSrc = particleData[i]->DataNew->pos.section(rangeStart, rangeSize);
+            copyResults[i] = copy_async(posSrc, m_hostPos.begin() + rangeStart); 
+            array_view<float_3, 1> velSrc = particleData[i]->DataNew->vel.section(rangeStart, rangeSize);
+            copyResults[i + numAccs] = copy_async(velSrc, m_hostVel.begin() + rangeStart); 
+        });
 
-        std::for_each(copyResult.begin(), copyResult.end(), [](completion_future& f) { f.wait(); });
+        parallel_for_each(copyResults.cbegin(), copyResults.cend(), [](const completion_future& r) { r.wait(); });
 
         // Sync updated particles back onto all accelerators. Even for N=58368 simple copy is faster than
         // only copying updated data to individual accelerator.
 
-        for (size_t i = 0; i < numAccs; ++i)
+        // TODO_AMP: Is this really the case? Try re-writing to only copy the required data and see if this is faster.
+
+        parallel_for(0u, numAccs, [=, this, &copyResults] (int i)
         {
-            copyResult[i] = copy_async(m_hostPos.begin(), particleData[i]->DataNew->pos);
-            copyResult[i + numAccs] = copy_async(m_hostVel.begin(), particleData[i]->DataNew->vel);
-        }
-        std::for_each(copyResult.begin(), copyResult.end(), [](completion_future& f) { f.wait(); });
+            copyResults[i] = copy_async(m_hostPos.begin(), particleData[i]->DataNew->pos);
+            copyResults[i + numAccs] = copy_async(m_hostVel.begin(), particleData[i]->DataNew->vel);
+        });
+
+        parallel_for_each(copyResults.cbegin(), copyResults.cend(), [] (const completion_future& r) { r.wait(); });
     }
 };
