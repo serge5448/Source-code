@@ -466,6 +466,8 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
             std::swap(arrAs, arrCs);
         }
 
+        // Copy final results back into CPU outData.
+
         array_view<float, 2> c(rows, cols, vC);
         std::for_each(tasks.crbegin(), tasks.crend(), [=, &arrAs, &c](const TaskData& t)
         {
