@@ -389,9 +389,12 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
 
     // Create swap array on CPU accelerator
 
-    array<float, 2> swap = array<float, 2>(extent<2>(shift, cols), 
+    array<float, 2> swapTop = array<float, 2>(extent<2>(shift, cols), 
         accelerator(accelerator::cpu_accelerator).default_view);
-    array_view<float, 2> swapView = array_view<float, 2>(swap);
+    array_view<float, 2> swapViewTop = array_view<float, 2>(swapTop);
+    array<float, 2> swapBottom = array<float, 2>(extent<2>(shift, cols), 
+        accelerator(accelerator::cpu_accelerator).default_view);
+    array_view<float, 2> swapViewBottom = array_view<float, 2>(swapBottom);
 
     //  Calculation
     double time = TimeFunc(tasks[0].view, [&]()
@@ -416,31 +419,61 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
 
             //  Swap edges
 
+            std::vector<completion_future> copyResults((tasks.size() - 1) * 2);
+            parallel_for(0u, (tasks.size() - 1), [=, &arrCs, &copyResults](size_t i)
+            {
+                array_view<float, 2> topEdge = 
+                    arrCs[i].section(index<2>(tasks[i].writeOffset + tasks[i].writeExt[0] - shift, 0), 
+                        swapViewTop.extent);
+                array_view<float, 2> bottomEdge = arrCs[i + 1].section(index<2>(tasks[i + 1].writeOffset, 0), 
+                    swapViewBottom.extent);
+                copyResults[i] = copy_async(topEdge, swapViewTop);
+                copyResults[i + 1] = copy_async(bottomEdge, swapViewBottom);
+            });
+
+            parallel_for_each(copyResults.begin(), copyResults.end(), [=](completion_future& f) { f.wait(); });
+
+            parallel_for(0u, (tasks.size() - 1), [=, &arrCs, &copyResults](size_t i)
+            {
+                array_view<float, 2> topEdge = 
+                    arrCs[i].section(index<2>(tasks[i].writeOffset + tasks[i].writeExt[0] - shift, 0), 
+                        swapViewTop.extent);
+                array_view<float, 2> bottomEdge = arrCs[i + 1].section(swapViewTop.extent);
+                copyResults[i] = copy_async(swapViewTop, bottomEdge);
+                copyResults[i + 1] = copy_async(swapViewBottom, topEdge);
+            });
+
+            parallel_for_each(copyResults.begin(), copyResults.end(), [=](completion_future& f) { f.wait(); });
+
+            // Sequential version of the above swapping code. This may lead to contention on
+            // Windows 7 due to blocking copy operations.
+            /*
             for (size_t d = 0; d < tasks.size() - 1; ++d)
             {
                 // Copy bottom edge of write extent in upper accelerator to top edge on lower accelerator.
                 arrCs[d].section(index<2>(tasks[d].writeOffset + tasks[d].writeExt[0] - shift, 0), 
-                                swapView.extent).copy_to(swapView);
-                swapView.copy_to(arrCs[d + 1].section(swapView.extent));
+                                swapViewTop.extent).copy_to(swapViewTop);
+                swapViewTop.copy_to(arrCs[d + 1].section(swapViewTop.extent));
                 // Copy top edge of write extent in lower accelerator to bottom edge on upper accelerator. 
                 arrCs[d + 1].section(index<2>(tasks[d+1].writeOffset, 0), 
-                                    swapView.extent).copy_to(swapView);
-                swapView.copy_to(arrCs[d].section(index<2>(arrCs[d].extent[0] - shift, 0), 
-                                 swapView.extent));
+                                    swapViewTop.extent).copy_to(swapViewTop);
+                swapViewTop.copy_to(arrCs[d].section(index<2>(arrCs[d].extent[0] - shift, 0), 
+                                 swapViewTop.extent));
             }
+            */
 
             //  Swap results of this iteration with the input matrix
             std::swap(arrAs, arrCs);
         }
 
-    array_view<float, 2> c(rows, cols, vC);
-    std::for_each(tasks.crbegin(), tasks.crend(), [=, &arrAs, &c](const TaskData& t)
-    {
-        index<2> ind(t.writeOffset, shift);
-        extent<2> ext(t.writeExt[0], t.writeExt[1] - shift * 2);
-        array_view<float, 2> outData = c.section(ind, ext); 
-        arrAs[t.id].section(ind, ext).copy_to(outData);
-    });
+        array_view<float, 2> c(rows, cols, vC);
+        std::for_each(tasks.crbegin(), tasks.crend(), [=, &arrAs, &c](const TaskData& t)
+        {
+            index<2> ind(t.writeOffset, shift);
+            extent<2> ext(t.writeExt[0], t.writeExt[1] - shift * 2);
+            array_view<float, 2> outData = c.section(ind, ext); 
+            arrAs[t.id].section(ind, ext).copy_to(outData);
+        });
     });
     std::wcout << " " << tasks.size() << " GPU matrix weighted average took                               " << time << " (ms)" << std::endl;
 #ifdef _DEBUG
