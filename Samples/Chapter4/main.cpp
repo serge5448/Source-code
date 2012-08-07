@@ -122,8 +122,8 @@ public:
 int main()
 {
     const int M = 64;
-    const int N = 64 * 64;
-    const int W = 64;
+    const int N = 512;
+    const int W = 256;
 
     accelerator defaultDevice(accelerator::default_accelerator);
     accelerator_view defaultView = defaultDevice.default_view;
