@@ -382,7 +382,6 @@ void TransposeTruncatedExample(int matrixSize)
     tiled_extent<tileSize, tileSize> computeDomain = inDataView.extent.tile<tileSize, tileSize>();
     computeDomain = computeDomain.truncate();
 
-    // TODO_AMP: TDRs with /02 on RC build.
     accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
     double elapsedTime = TimeFunc(view, [&]() 
     {

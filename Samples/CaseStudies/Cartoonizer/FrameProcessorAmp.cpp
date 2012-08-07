@@ -254,7 +254,6 @@ void SimplifyIndexTiled(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPac
 //
 //  See the following Wikipedia page on the Canny edge detector for a further description 
 //  of the algorithm.
-// TODO_AMP: Add reference to Canny edge detector to Chapter 10.
 
 void ApplyEdgeDetectionHelper(const array<ArgbPackedPixel, 2>& srcFrame, 
                               array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
