@@ -67,14 +67,13 @@ public:
         m_frames[current]->copy_to(*m_frames[kOriginal].get());
         for (UINT i = 0; i < phases; ++i)
         {
-            ApplyColorSimplifier(
-                *m_frames[current].get(), *m_frames[next].get(), simplifierNeighborWindow);
+            ApplyColorSimplifier(*m_frames[current].get(), 
+                *m_frames[next].get(), simplifierNeighborWindow);
             std::swap(current, next);
         }
 
-        ApplyEdgeDetection(
-            *m_frames[current].get(), *m_frames[next].get(), *m_frames[kOriginal].get(), 
-            simplifierNeighborWindow);
+        ApplyEdgeDetection(*m_frames[current].get(), *m_frames[next].get(), 
+            *m_frames[kOriginal].get(), simplifierNeighborWindow);
         std::swap(current, next);
         CopyOut(*m_frames[current].get(), destFrame);
     }

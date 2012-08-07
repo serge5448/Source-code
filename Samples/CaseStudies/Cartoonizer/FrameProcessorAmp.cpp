@@ -299,8 +299,8 @@ void ApplyEdgeDetectionTiledHelper(const array<ArgbPackedPixel, 2>& srcFrame,
 }
 
 void DetectEdge(index<2> idx, const array<ArgbPackedPixel, 2>& srcFrame, 
-                array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
-                UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
+    array<ArgbPackedPixel, 2>& destFrame, const array<ArgbPackedPixel, 2>& orgFrame, 
+    UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
 {
     const float alpha = 0.3f;       // Weighting of original frame for edge detection
     const float beta = 0.8f;        // Weighting of source (color simplified) frame for edge detection
@@ -321,8 +321,7 @@ void DetectEdge(index<2> idx, const array<ArgbPackedPixel, 2>& srcFrame,
 
     const float edgeS = (1 - alpha) * Sy + alpha * (Su + Sv) / 2;
     const float edgeA = (1 - alpha) * Ay + alpha * (Au + Av) / 2;
-    const float i = (1 - beta) * 
-        smoothstep(s0, s1, edgeS) + beta * smoothstep(a0, a1, edgeA);
+    const float i = (1 - beta) * smoothstep(s0, s1, edgeS) + beta * smoothstep(a0, a1, edgeA);
 
     const RgbPixel srcClr = UnpackPixel(srcFrame[idc]);
     RgbPixel destClr;

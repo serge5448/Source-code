@@ -96,8 +96,8 @@ public:
         {
             std::for_each(m_frameData.begin(), m_frameData.end(), [=](TaskData& d) 
             {
-                ::ApplyColorSimplifierHelper(
-                    *d.frames[current].get(), *d.frames[next].get(), simplifierNeighborWindow);
+                ::ApplyColorSimplifierHelper(*d.frames[current].get(), *d.frames[next].get(), 
+                    simplifierNeighborWindow);
             });
 
             const UINT borderHeight = simplifierNeighborWindow / 2;
@@ -131,7 +131,8 @@ private:
     // main memory, modifying it and then refreshing the accelerator memory with the new edge values. Use sections so
     // only the data that has changed needs to be synced back to the accelerator.
 
-    void SwapEdges(array<ArgbPackedPixel, 2>* const top, array<ArgbPackedPixel, 2>* const bottom, UINT borderHeight)
+    void SwapEdges(array<ArgbPackedPixel, 2>* const top, 
+        array<ArgbPackedPixel, 2>* const bottom, UINT borderHeight)
     {
         const UINT topHeight = top->extent[0];
         top->section(topHeight - borderHeight * 2, 0, borderHeight, m_width).copy_to(m_swapViewTop); 

@@ -42,7 +42,8 @@ private:
             return (lhs->GetSequence() > rhs->GetSequence());
         }
     };
-    std::priority_queue<ImageInfoPtr, std::vector<ImageInfoPtr>, CompareImageInfoPtr> m_multiplexQueue;
+    std::priority_queue<ImageInfoPtr, std::vector<ImageInfoPtr>, CompareImageInfoPtr> 
+        m_multiplexQueue;
 
 public:
     ImageCartoonizerAgentParallel(IImagePipelineDialog* const pDialog, 
@@ -115,7 +116,6 @@ private:
                 }
             }
         ));
-
         m_multiplexBuffer.link_target(m_multiplexer.get());
     }
 };
