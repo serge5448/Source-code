@@ -135,10 +135,14 @@ private:
         array<ArgbPackedPixel, 2>* const bottom, UINT borderHeight)
     {
         const UINT topHeight = top->extent[0];
-        top->section(topHeight - borderHeight * 2, 0, borderHeight, m_width).copy_to(m_swapViewTop); 
-        bottom->section(borderHeight, 0, borderHeight, m_width).copy_to(m_swapViewBottom);
-        m_swapViewTop.copy_to(bottom->section(0, 0, borderHeight, m_width));
-        m_swapViewBottom.copy_to(top->section(topHeight - borderHeight, 0, borderHeight, m_width));
+        std::array<completion_future, 2> copyResults;
+        copyResults[0] = copy_async(top->section(topHeight - borderHeight * 2, 0, borderHeight, m_width), m_swapViewTop); 
+        copyResults[1] = copy_async(bottom->section(borderHeight, 0, borderHeight, m_width), m_swapViewBottom);
+        parallel_for_each(copyResults.begin(), copyResults.end(), [](completion_future& f){ f.wait(); });
+
+        copyResults[0] = copy_async(m_swapViewTop, bottom->section(0, 0, borderHeight, m_width));
+        copyResults[1] = copy_async(m_swapViewBottom, top->section(topHeight - borderHeight, 0, borderHeight, m_width));
+        parallel_for_each(copyResults.begin(), copyResults.end(), [](completion_future& f){ f.wait(); });
     }
 
     void ConfigureFrameBuffers(std::vector<TaskData>& taskData, const Gdiplus::BitmapData& srcFrame, UINT neighborWindow)
