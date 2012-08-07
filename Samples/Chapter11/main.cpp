@@ -151,12 +151,13 @@ void TextureReadingExample()
     std::vector<int> input((rows * cols), 1);
     
     const texture<int, 2> inputTx(rows, cols, input.cbegin(), input.cend());
+    // Other examples:
     //const texture<int, 2> inputTx(rows, cols, accelerator(accelerator::default_accelerator).default_view);
     //const texture<unorm, 2> inputTx(rows, cols, 8u);
     std::vector<int> output((rows * cols), 0);
     array_view<int, 2> outputAv(rows, cols, output);
     outputAv.discard_data();
-    
+
     parallel_for_each(outputAv.extent, [&inputTx, outputAv](index<2> idx) restrict(amp)
     {
         outputAv[idx] = inputTx[idx];                   // subscript [index<2>] operator
