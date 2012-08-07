@@ -49,9 +49,7 @@ struct ParticlesCpu
     std::vector<float_3> pos;
     std::vector<float_3> vel;
 
-    ParticlesCpu(int size) : pos(size), vel(size)
-    {
-    }
+    ParticlesCpu(int size) : pos(size), vel(size) { }
 
     inline int size() const
     {
@@ -71,11 +69,7 @@ struct ParticlesAmp
     array<float_3, 1>& vel;
 
 public:
-    ParticlesAmp(array<float_3, 1>& pos, array<float_3, 1>& vel) :
-        pos(pos),
-        vel(vel)
-    {
-    }
+    ParticlesAmp(array<float_3, 1>& pos, array<float_3, 1>& vel) : pos(pos), vel(vel) { }
 
     inline int size() const { return pos.extent.size(); }
 };
@@ -137,7 +131,6 @@ std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles, accelerator
     }
 
     AmpUtils::DebugListAccelerators(gpuAccelerators);
-
     return tasks;
 }
 
@@ -146,8 +139,8 @@ std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles, accelerator
 //--------------------------------------------------------------------------------------
 
 void BodyBodyInteraction(float_3& acc, const float_3 particlePosition, 
-                         const float_3 otherParticlePosition, 
-                         float softeningSquared, float particleMass) restrict(amp)
+    const float_3 otherParticlePosition, 
+    float softeningSquared, float particleMass) restrict(amp)
 {
     float_3 r = otherParticlePosition - particlePosition;
 

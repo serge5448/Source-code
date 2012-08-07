@@ -269,7 +269,7 @@ void InitApp()
     //  If there is a GPU accelerator then use it. Otherwise add a REF accelerator and display warning.
 
     for (int i = kSingleSimple; i <= kSingleTile512; ++i)
-        pComboBox->AddItem(processorNames[i].c_str(), (void*)i );
+        pComboBox->AddItem(processorNames[i].c_str(), nullptr);
     g_eComputeType = kSingleTile256;
 
     //  If there us more than one GPU then allow the user to use them together.
@@ -277,7 +277,7 @@ void InitApp()
     if (AmpUtils::GetGpuAccelerators().size() >= 2)
     {
         for (int i = kMultiTile64; i <= kMultiTile512; ++i)
-            pComboBox->AddItem(processorNames[i].c_str(), (void*)i );
+            pComboBox->AddItem(processorNames[i].c_str(), nullptr);
         g_eComputeType = kMultiTile256;
     }
      
@@ -589,7 +589,7 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
     case IDC_COMPUTETYPECOMBO:
         {
             CDXUTComboBox* pComboBox = static_cast<CDXUTComboBox*>(pControl);
-            g_eComputeType = ( ComputeType )( INT_PTR )pComboBox->GetSelectedData();
+            g_eComputeType = static_cast<ComputeType>(pComboBox->GetSelectedIndex());
 
             g_particleColor = g_particleColors[g_eComputeType];
             g_pNBody = NBodyFactory(g_eComputeType);

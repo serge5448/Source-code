@@ -55,7 +55,8 @@ void NBodySimpleInteractionEngine::SelectCpuImplementation()
     }
 }
 
-void NBodySimpleInteractionEngine::BodyBodyInteraction(const ParticleCpu* const pParticlesIn, ParticleCpu& particleOut, int numParticles) const 
+void NBodySimpleInteractionEngine::BodyBodyInteraction(const ParticleCpu* const pParticlesIn, 
+    ParticleCpu& particleOut, int numParticles) const 
 {
     float_3 pos(particleOut.pos);
     float_3 vel(particleOut.vel);
@@ -199,7 +200,8 @@ void NBodySimpleInteractionEngine::BodyBodyInteractionSSE4(const ParticleCpu* co
 //  This updates all particles by calling the integration engine for each particle in the 
 //  list.
 
-void NBodySimpleSingleCore::Integrate(ParticleCpu* const pParticlesIn, ParticleCpu* const pParticlesOut, int numParticles) const
+void NBodySimpleSingleCore::Integrate(ParticleCpu* const pParticlesIn, 
+    ParticleCpu* const pParticlesOut, int numParticles) const
 {
     for (int i = 0; i < numParticles; ++i)
     {
@@ -239,9 +241,11 @@ void LoadClusterParticles(ParticleCpu* const pParticles, float_3 center, float_3
     std::uniform_real_distribution<float> randTheta(-1.0f, 1.0f);
     std::uniform_real_distribution<float> randPhi(0.0f, 2.0f * static_cast<float>(std::_Pi));
 
-    std::for_each(pParticles, pParticles + numParticles, [=, &engine, &randRadius, &randTheta, &randPhi](ParticleCpu& p)
+    std::for_each(pParticles, pParticles + numParticles, 
+        [=, &engine, &randRadius, &randTheta, &randPhi](ParticleCpu& p)
     {
-        float_3 delta = PolarToCartesian(randRadius(engine), acos(randTheta(engine)), randPhi(engine));
+        float_3 delta = PolarToCartesian(randRadius(engine), 
+            acos(randTheta(engine)), randPhi(engine));
         p.pos = center + delta; 
         p.vel = velocity;
         p.acc = 0.0f;

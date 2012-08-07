@@ -28,5 +28,6 @@ struct ParticleCpu;
 class INBodyCpu
 {
 public:
-    virtual void Integrate(ParticleCpu* const pParticlesIn, ParticleCpu* const pParticlesOut, int numParticles) const = 0;
+    virtual void Integrate(ParticleCpu* const pParticlesIn, 
+        ParticleCpu* const pParticlesOut, int numParticles) const = 0;
 };

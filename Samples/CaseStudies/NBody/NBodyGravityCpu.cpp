@@ -227,9 +227,9 @@ void InitApp()
 
     if (pComboBox)
     {
-        pComboBox->AddItem( L"CPU Single Core", ( void* )kCpuSingle );
-        pComboBox->AddItem( L"CPU Multi Core", ( void* )kCpuMulti );
-        pComboBox->AddItem( L"CPU Advanced", ( void* )kCpuAdvanced );
+        pComboBox->AddItem( L"CPU Single Core", nullptr );
+        pComboBox->AddItem( L"CPU Multi Core", nullptr );
+        pComboBox->AddItem( L"CPU Advanced", nullptr );
     }
 
     g_HUD.GetSlider( IDC_NBODIES_SLIDER )->SetValue( (g_numParticles / g_particleNumStepSize) );
@@ -279,7 +279,7 @@ HRESULT CreateParticleBuffer( ID3D11Device* pd3dDevice )
 void LoadParticles()
 {
     float centerSpread = g_Spread * 0.50f;
-    for(size_t i=0; i<g_maxParticles; i += g_particleNumStepSize)
+    for(size_t i = 0; i < g_maxParticles; i += g_particleNumStepSize)
     {
         LoadClusterParticles(&g_pParticlesOld[i],
             float_3(centerSpread, 0.0f, 0.0f), 
@@ -303,15 +303,18 @@ std::shared_ptr<INBodyCpu> NBodyFactory(ComputeType type)
     switch (type)
     {
     case kCpuSingle:
-        return std::make_shared<NBodySimpleSingleCore>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass);
+        return std::make_shared<NBodySimpleSingleCore>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass);
         break;
     case kCpuMulti:
-        return std::make_shared<NBodySimpleMultiCore>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass);
+        return std::make_shared<NBodySimpleMultiCore>(g_softeningSquared, g_dampingFactor, 
+            g_deltaTime, g_particleMass);
         break;
     case kCpuAdvanced:
         {
             int tileSize = GetLevelOneCacheSize() / sizeof(ParticleCpu);
-            return std::make_shared<NBodyAdvanced>(g_softeningSquared, g_dampingFactor, g_deltaTime, g_particleMass, tileSize);
+            return std::make_shared<NBodyAdvanced>(g_softeningSquared, g_dampingFactor, 
+                g_deltaTime, g_particleMass, tileSize);
         }
         break;
     default:
@@ -409,7 +412,7 @@ bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* p
 
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext)
 {
-    g_pNBody->Integrate( g_pParticlesOld, g_pParticlesNew, g_numParticles);
+    g_pNBody->Integrate(g_pParticlesOld, g_pParticlesNew, g_numParticles);
 
     // Advanced integrator updates particles in place, so no need to swap the buffers.
     if (g_eComputeType != kCpuAdvanced)
@@ -474,14 +477,14 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
     case IDC_COMPUTETYPECOMBO:
         {
             CDXUTComboBox* pComboBox = static_cast<CDXUTComboBox*>(pControl);
-            g_eComputeType = ( ComputeType )( INT_PTR )pComboBox->GetSelectedData();
+            g_eComputeType = static_cast<ComputeType>(pComboBox->GetSelectedIndex());
 
             g_particleColor = g_particleColors[g_eComputeType];
             g_pNBody = NBodyFactory(g_eComputeType);
 
             WCHAR szTemp[256];
-            swprintf_s( szTemp, L"Bodies: %d", g_numParticles );    
-            g_HUD.GetStatic( IDC_NBODIES_LABEL )->SetText(szTemp );
+            swprintf_s(szTemp, L"Bodies: %d", g_numParticles);    
+            g_HUD.GetStatic(IDC_NBODIES_LABEL)->SetText(szTemp );
             g_FpsStatistics.clear();
         }
         break;  
@@ -491,8 +494,8 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
             g_numParticles = pSlider->GetValue() * g_particleNumStepSize;
 
             WCHAR szTemp[256];
-            swprintf_s( szTemp, L"Bodies: %d", g_numParticles );    
-            g_HUD.GetStatic( IDC_NBODIES_LABEL )->SetText( szTemp );
+            swprintf_s(szTemp, L"Bodies: %d", g_numParticles);    
+            g_HUD.GetStatic(IDC_NBODIES_LABEL)->SetText(szTemp);
             g_FpsStatistics.clear();
         }
         break;
@@ -741,10 +744,10 @@ void CALLBACK OnD3D11FrameRender(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
     view = *g_camera.GetViewMatrix();
 
     // Render the particles
-    RenderParticles( pd3dImmediateContext, view, projection );
+    RenderParticles(pd3dImmediateContext, view, projection);
 
-    g_HUD.OnRender( fElapsedTime );
-    g_sampleUI.OnRender( fElapsedTime );
+    g_HUD.OnRender(fElapsedTime);
+    g_sampleUI.OnRender(fElapsedTime);
     RenderText();
 }
 

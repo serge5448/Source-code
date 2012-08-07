@@ -65,7 +65,9 @@ private:
 
         bool operator() (const concurrency::accelerator& a) 
         {
-            return (a.is_emulated || ((a.device_path.compare(concurrency::accelerator::direct3d_warp) == 0) && !m_includeWarp));
+            return (a.is_emulated || 
+                ((a.device_path.compare(concurrency::accelerator::direct3d_warp) == 0) 
+                 && !m_includeWarp));
         }  
     };
 
