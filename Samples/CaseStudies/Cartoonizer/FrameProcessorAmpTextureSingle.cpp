@@ -32,9 +32,9 @@ void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const writeonly_texture_v
 //  Edge detection.
 
 void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>& destFrame, 
-                               const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow);
+    const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow);
 void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame, const writeonly_texture_view<uint_4, 2>& destFrame,  
-                          const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow, const float_3& W) restrict(amp);
+    const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow, const float_3& W) restrict(amp);
 void CalculateSobel(const texture<uint_4, 2>& source, index<2> idx, float& dy, float& du, float& dv,  const float_3& W) restrict(amp);
 
 //--------------------------------------------------------------------------------------
@@ -42,8 +42,8 @@ void CalculateSobel(const texture<uint_4, 2>& source, index<2> idx, float& dy, f
 //--------------------------------------------------------------------------------------
 
 void FrameProcessorAmpTextureSingle::ProcessImage(const Gdiplus::BitmapData& srcFrame, 
-                                                  Gdiplus::BitmapData& destFrame, 
-                                                  UINT phases, UINT simplifierNeighborWindow)
+    Gdiplus::BitmapData& destFrame, 
+    UINT phases, UINT simplifierNeighborWindow)
 {
     assert(simplifierNeighborWindow % 2 == 0);
     assert(phases > 0);
@@ -58,7 +58,7 @@ void FrameProcessorAmpTextureSingle::ProcessImage(const Gdiplus::BitmapData& src
     for (UINT i = 0; i < phases; ++i)
     {
         ApplyColorSimplifier(*m_frames[current].get(), *m_frames[next].get(), 
-                             simplifierNeighborWindow);
+            simplifierNeighborWindow);
         std::swap(current, next);
     }
 
@@ -81,7 +81,8 @@ void FrameProcessorAmpTextureSingle::ConfigureFrameBuffers(const Gdiplus::Bitmap
 
     std::generate(m_frames.begin(), m_frames.end(), [=]()->std::shared_ptr<texture<uint_4, 2>> 
     { 
-        return std::make_shared<texture<uint_4, 2>>(int(m_height), int(m_width), 8u, m_accelerator.default_view); 
+        return std::make_shared<texture<uint_4, 2>>(int(m_height), int(m_width), 8u, 
+            m_accelerator.default_view); 
     });
     m_originalFrameView = std::unique_ptr<writeonly_texture_view<uint_4, 2>>(
         new writeonly_texture_view<uint_4, 2>(*m_frames[kOriginal].get()));
@@ -109,7 +110,7 @@ void ApplyColorSimplifier(const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>
 }
 
 void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const writeonly_texture_view<uint_4, 2>& destFrame, index<2> idx, 
-                                                   UINT neighborWindow, const float_3& W) restrict(amp)
+    UINT neighborWindow, const float_3& W) restrict(amp)
 {
     const int shift = neighborWindow / 2;
     float sum = 0;
@@ -158,8 +159,8 @@ void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const writeonly_texture_v
 //  of the algorithm.
 
 void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame, 
-                        texture<uint_4, 2>& destFrame, const texture<uint_4, 2>& orgFrame, 
-                        UINT simplifierNeighborWindow)
+    texture<uint_4, 2>& destFrame, const texture<uint_4, 2>& orgFrame, 
+    UINT simplifierNeighborWindow)
 {
     const float_3 W(ImageUtils::W);
     const float alpha = 0.3f;
@@ -180,8 +181,8 @@ void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame,
 }
 
 void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame, 
-                   const writeonly_texture_view<uint_4, 2>& destFrame, const texture<uint_4, 2>& orgFrame, 
-                   UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
+    const writeonly_texture_view<uint_4, 2>& destFrame, const texture<uint_4, 2>& orgFrame, 
+    UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
 {
     const float alpha = 0.3f;       // Weighting of original frame for edge detection
     const float beta = 0.8f;        // Weighting of source (color simplified) frame for edge detection
@@ -216,7 +217,7 @@ void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame,
 }
 
 void CalculateSobel(const texture<uint_4, 2>& srcFrame, index<2> idx, 
-                    float& dy, float& du, float& dv,  const float_3& W) restrict(amp)
+    float& dy, float& du, float& dv,  const float_3& W) restrict(amp)
 {
     // Apply the Sobel operator to the image.  The Sobel operation is analogous
     // to a first derivative of the grayscale part of the image.  Portions of

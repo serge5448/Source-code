@@ -32,7 +32,8 @@ template<typename T>
 inline static typename std::enable_if<(short_vector_traits<typename T>::size > 0), float>::type 
     length(const T& vec) restrict(cpu, amp)
 {
-    return length_helper<short_vector_traits<typename T>::value_type, short_vector_traits<typename T>::size>::length(vec);
+    return length_helper<short_vector_traits<typename T>::value_type, 
+        short_vector_traits<typename T>::size>::length(vec);
 }
 
 //  Template specializations for ScalarType_N short vectors.

@@ -40,9 +40,10 @@ struct RgbPixel
 //  Pack the low order bytes from four unsigned longs representing RGB into a single unsigned long representing ARGB.
 //  The Luma/Alpha value is always set to 0xFF.
 
+const int fixedAlpha = 0xFF;
+
 inline ArgbPackedPixel PackPixel(const RgbPixel& rgb) restrict(amp) 
 {
-    const int fixedAlpha = 0xFF;
     return (rgb.b | (rgb.g << 8) | (rgb.r << 16) | (fixedAlpha << 24));
 }
  
@@ -51,7 +52,7 @@ inline ArgbPackedPixel PackPixel(const RgbPixel& rgb) restrict(amp)
 inline RgbPixel UnpackPixel(const ArgbPackedPixel& packedArgb) restrict(amp) 
 {
     RgbPixel rgb;
-    rgb.b = packedArgb & 0xFF;
+    rgb.b = packedArgb & fixedAlpha;
     rgb.g = (packedArgb & 0xFF00) >> 8;
     rgb.r = (packedArgb & 0xFF0000) >> 16;
     return rgb;

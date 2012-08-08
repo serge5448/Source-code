@@ -520,7 +520,7 @@ void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext)
 {
     g_pNBody->Integrate(g_deviceData, g_numParticles);
 
-    std::for_each(g_deviceData.begin(), g_deviceData.end(), [] (std::shared_ptr<TaskData>& t) 
+    std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t) 
     { 
         std::swap(t->DataOld, t->DataNew); 
     });
@@ -807,11 +807,11 @@ bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view
     // Set IA parameters, don't need to pass arrays to IASetVertexBuffers as there is only one buffer.
     const UINT stride = sizeof(ParticleVertex);
     const UINT offset =  0;
-    pd3dImmediateContext->IASetVertexBuffers( 0, 1, &g_pParticleBuffer.p, &stride, &offset );
+    pd3dImmediateContext->IASetVertexBuffers(0, 1, &g_pParticleBuffer.p, &stride, &offset);
     pd3dImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_POINTLIST );
 
     // Don't need to pass array to VSSetShaderResources as there is only one buffer.
-    pd3dImmediateContext->VSSetShaderResources( 0, 1, &g_pParticlePosRvOld.p );
+    pd3dImmediateContext->VSSetShaderResources(0, 1, &g_pParticlePosRvOld.p);
 
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     pd3dImmediateContext->Map( g_pConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
@@ -828,10 +828,10 @@ bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view
     pd3dImmediateContext->OMSetBlendState( g_pBlendingStateParticle, D3DXCOLOR( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF  );
     pd3dImmediateContext->OMSetDepthStencilState( g_pDepthStencilState, 0 );
 
-    pd3dImmediateContext->Draw( g_numParticles, 0 );
+    pd3dImmediateContext->Draw(g_numParticles, 0);
 
     ID3D11ShaderResourceView* ppSRVnullptr[1] = { nullptr };
-    pd3dImmediateContext->VSSetShaderResources( 0, 1, ppSRVnullptr );
+    pd3dImmediateContext->VSSetShaderResources(0, 1, ppSRVnullptr);
     pd3dImmediateContext->PSSetShaderResources( 0, 1, ppSRVnullptr );
 
     pd3dImmediateContext->GSSetShader( nullptr, nullptr, 0 );

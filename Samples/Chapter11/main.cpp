@@ -116,6 +116,9 @@ void TextureCopyExample()
     const int rows = 64;
     std::vector<uint> uintData((rows * cols), 1);
 
+    accelerator acc = accelerator();
+    const texture<int, 2> text0(rows, cols, acc.default_view);
+
     texture<uint, 2> text1(rows, cols, uintData.cbegin(), uintData.cend());
 
     uint bitsPerScalarElement = 8u;
@@ -136,11 +139,11 @@ void TextureCopyExample()
 
     //  Asynchronous copy
 
-    completion_future copyFut = copy_async(text3, byteData.data(), dataSize);
+    completion_future f = copy_async(text3, byteData.data(), dataSize);
     
-    copyFut.then([=](){ std::wcout << "Copy complete" << std::endl; });
+    f.then([=](){ std::wcout << "Copy complete" << std::endl; });
 
-    copyFut.wait();
+    f.wait();
     std::wcout << "Copy complete" << std::endl;
 }
 
@@ -219,9 +222,20 @@ void TextureReadingAndWritingExample()
 
     parallel_for_each(outputTx.extent, [&outputTx](index<2> idx) restrict(amp)
     {
+        // outputTx.set(idx, outputTx[idx] + 1);
         writeonly_texture_view<int, 2> outputTxVw(outputTx);
         outputTxVw.set(idx, outputTx[idx] + 1);
     });
+
+    // DO NOT USE THIS CODE. IT IS AN EXAMPLE OF SOMETHING THAT IS NOT SUPPORTED!
+    /*
+    texture<int, 2> text2(rows, cols, input.data(), input.size() * sizeof(int), 32u);
+    writeonly_texture_view<int, 2> outputTxVw(text2); 
+    parallel_for_each(outputTxVw.extent, [outputTxVw, &text2](index<2> idx) restrict(amp)
+    {
+       outputTxVw.set(idx, text2[idx] +1);
+    });
+    */
 }
 
 void TextureReadingAndWritingWithViewsExample()
@@ -262,7 +276,6 @@ void InteropFromD3DExample()
     IUnknown* unkRes = get_texture(text); 
     hr = unkRes->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID*>(&texture));   
     assert(SUCCEEDED(hr));
-
 }
 
 void InteropToD3DExample()
@@ -293,7 +306,8 @@ void InteropToD3DExample()
     assert(SUCCEEDED(hr));
 
     accelerator_view dxView = create_accelerator_view(device);
-    std::wcout << "Created accelerator_view on " << dxView.accelerator.description << std::endl;
+    std::wcout << "Created accelerator_view on " 
+        << dxView.accelerator.description << std::endl;
 
     //  Create an array from a D3D buffer
 
@@ -309,7 +323,7 @@ void InteropToD3DExample()
         sizeof(float)
     };
     D3D11_SUBRESOURCE_DATA resourceData;
-    ZeroMemory( &resourceData, sizeof( D3D11_SUBRESOURCE_DATA ) );
+    ZeroMemory(&resourceData, sizeof(D3D11_SUBRESOURCE_DATA));
 
     std::vector<float> vertices(bufferSize, 1.0f);
 
@@ -319,7 +333,8 @@ void InteropToD3DExample()
     assert(SUCCEEDED(hr));
 
     array<float, 1> arr = make_array<float, 1>(extent<1>(bufferSize), dxView, buffer);
-    std::wcout << "Created array<float,1> on " << arr.accelerator_view.accelerator.description << std::endl;
+    std::wcout << "Created array<float,1> on " 
+        << arr.accelerator_view.accelerator.description << std::endl;
 
     // Create a texture from a D3D texture resource
 

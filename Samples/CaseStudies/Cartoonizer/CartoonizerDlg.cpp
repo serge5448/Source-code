@@ -181,14 +181,12 @@ BOOL CartoonizerDlg::OnInitDialog()
 
     AddComboItem(pDropDown, processorNames, kCpuSingle);
     AddComboItem(pDropDown, processorNames, kCpuMulti);
-    pDropDown->SetCurSel(kCpuMulti);
 
     //  If there is a GPU or WARP accelerator then use it. Otherwise add a REF accelerator and display warning.
 
     AddComboItem(pDropDown, processorNames, kAmpSimple);
-    AddComboItem(pDropDown, processorNames, kAmpTiled);
+    pDropDown->SetCurSel(AddComboItem(pDropDown, processorNames, kAmpTiled));
     AddComboItem(pDropDown, processorNames, kAmpTexture);
-    pDropDown->SetCurSel(kAmpTiled);
 
 #ifndef _DEBUG
     if (AmpUtils::GetAccelerators().empty())
@@ -204,7 +202,7 @@ BOOL CartoonizerDlg::OnInitDialog()
     if (AmpUtils::HasAccelerator(accelerator::direct3d_warp) && accelerator(accelerator::default_accelerator).device_path.compare(accelerator::direct3d_warp) != 0)
     {
         AddComboItem(pDropDown, processorNames, kAmpWarpSimple);
-        int i = AddComboItem(pDropDown, processorNames, kAmpWarpTiled);
+        AddComboItem(pDropDown, processorNames, kAmpWarpTiled);
     }
 
     //  If there us more than one GPU then allow the user to use them together.
@@ -213,10 +211,16 @@ BOOL CartoonizerDlg::OnInitDialog()
     {
         AddComboItem(pDropDown, processorNames, kAmpMultiSimple);
         AddComboItem(pDropDown, processorNames, kAmpMultiTiled);
-        AddComboItem(pDropDown, processorNames, kAmpSimplePipeline);
-        int i = AddComboItem(pDropDown, processorNames, kAmpTiledPipeline);
-        pDropDown->SetCurSel(i);
-        AddComboItem(pDropDown, processorNames, kAmpTexturePipeline);
+        pDropDown->SetCurSel(AddComboItem(pDropDown, processorNames, kAmpMultiTiled));
+
+        // TODO_AMP: Resolve this issue.
+        // Only enable forked pipeline on Windows 8.
+        //if (isWindows8)
+        {
+            AddComboItem(pDropDown, processorNames, kAmpSimplePipeline);
+            pDropDown->SetCurSel(AddComboItem(pDropDown, processorNames, kAmpTiledPipeline));
+            AddComboItem(pDropDown, processorNames, kAmpTexturePipeline);
+        }
     }
 
     //  Dynamically set slider ranges.
