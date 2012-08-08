@@ -53,8 +53,8 @@ void FrameProcessorAmpTextureSingle::ProcessImage(const Gdiplus::BitmapData& src
     int current = kCurrent;
     int next = kNext;
     const UINT frame_size = srcFrame.Stride * m_height;
-    copy(srcFrame.Scan0, frame_size, *m_originalFrameView.get());
-    m_frames[current]->copy_to(*m_frames[kOriginal].get());
+    copy_async(srcFrame.Scan0, frame_size, *m_originalFrameView.get());
+    m_frames[kOriginal]->copy_to(*m_frames[current].get());
     for (UINT i = 0; i < phases; ++i)
     {
         ApplyColorSimplifier(*m_frames[current].get(), *m_frames[next].get(), 
@@ -84,7 +84,7 @@ void FrameProcessorAmpTextureSingle::ConfigureFrameBuffers(const Gdiplus::Bitmap
         return std::make_shared<texture<uint_4, 2>>(int(m_height), int(m_width), 8u, m_accelerator.default_view); 
     });
     m_originalFrameView = std::unique_ptr<writeonly_texture_view<uint_4, 2>>(
-        new writeonly_texture_view<uint_4, 2>(*m_frames[kCurrent].get()));
+        new writeonly_texture_view<uint_4, 2>(*m_frames[kOriginal].get()));
 }
 
 //--------------------------------------------------------------------------------------
