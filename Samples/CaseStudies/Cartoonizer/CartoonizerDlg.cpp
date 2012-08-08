@@ -210,7 +210,6 @@ BOOL CartoonizerDlg::OnInitDialog()
     if (AmpUtils::GetAccelerators().size() >= 2)
     {
         AddComboItem(pDropDown, processorNames, kAmpMultiSimple);
-        AddComboItem(pDropDown, processorNames, kAmpMultiTiled);
         pDropDown->SetCurSel(AddComboItem(pDropDown, processorNames, kAmpMultiTiled));
 
         // TODO_AMP: Resolve this issue.
