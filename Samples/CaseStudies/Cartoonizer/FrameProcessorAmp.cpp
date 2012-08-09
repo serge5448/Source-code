@@ -58,24 +58,25 @@ tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> GetTiledE
 
 void CopyIn(const Gdiplus::BitmapData& srcFrame, array<ArgbPackedPixel, 2>& currentImg, UINT startHeight, UINT endHeight)
 {
-    // Because ARGB is stored in four bytes the Bitmap::Width will always be equal to the Bitmap::Stride.
+    // Because ARGB is stored in four bytes the Bitmap::Width will always be equal to the Bitmap::Stride / sizeof(ArgbPackedPixel), no padding.
     const int height = endHeight - startHeight;
-    const int rowSize = srcFrame.Stride / sizeof(ArgbPackedPixel);
-    ArgbPackedPixel* const startAddr = static_cast<ArgbPackedPixel*>(srcFrame.Scan0) + rowSize * startHeight;
-    array_view<const ArgbPackedPixel, 2> srcView(extent<2>(height, rowSize), startAddr);
-    srcView.copy_to(currentImg);
+    ArgbPackedPixel* const startAddr = static_cast<ArgbPackedPixel*>(srcFrame.Scan0) + startHeight * srcFrame.Width;
+    copy(startAddr, startAddr + (height * srcFrame.Width), currentImg);
 }
 
-void CopyOut(array<ArgbPackedPixel, 2>& currentImg, Gdiplus::BitmapData& destFrame, UINT startHeight, UINT endHeight)
+void CopyOut(array<ArgbPackedPixel, 2>& currentImg, Gdiplus::BitmapData& destFrame)
 {
-    // Because ARGB is stored in four bytes the Bitmap::Width will always be equal to the Bitmap::Stride.
+    // Because ARGB is stored in four bytes the Bitmap::Width will always be equal to the Bitmap::Stride / sizeof(ArgbPackedPixel), no padding.
+    stdext::checked_array_iterator<ArgbPackedPixel*> iter = stdext::make_checked_array_iterator<ArgbPackedPixel*>(static_cast<ArgbPackedPixel*>(destFrame.Scan0), destFrame.Height * destFrame.Width);
+    copy(currentImg.section(0, 0, destFrame.Height, destFrame.Width), iter);
+}
+
+completion_future CopyOutAsync(array<ArgbPackedPixel, 2>& currentImg, Gdiplus::BitmapData& destFrame, UINT startHeight, UINT endHeight)
+{
+    // Because ARGB is stored in four bytes the Bitmap::Width will always be equal to the Bitmap::Stride / sizeof(ArgbPackedPixel), no padding.
     const int height = endHeight - startHeight;
-    const int rowSize = destFrame.Stride / sizeof(ArgbPackedPixel);
-    ArgbPackedPixel* const startAddr = static_cast<ArgbPackedPixel*>(destFrame.Scan0) + rowSize * startHeight;
-    array_view<ArgbPackedPixel, 2> destView(height, destFrame.Stride / sizeof(ArgbPackedPixel), startAddr);
-    destView.discard_data();
-    currentImg.section(0,0, height, destFrame.Width).copy_to(destView);
-    destView.synchronize();
+    stdext::checked_array_iterator<ArgbPackedPixel*> iter = stdext::make_checked_array_iterator<ArgbPackedPixel*>(static_cast<ArgbPackedPixel*>(destFrame.Scan0) + startHeight * destFrame.Width, height * destFrame.Width);
+    return copy_async(currentImg.section(0, 0, height, destFrame.Width), iter);
 }
 
 //--------------------------------------------------------------------------------------

@@ -117,14 +117,18 @@ public:
 
         // Sync the resulting image data to CPU memory and merge data into final image. Do copies in reverse order 
         // so that bottom border of subframe n-1 covers top border area of frame n.
+        // Use async copy to prevent blocking of other work due to process wide lock taken by DirectX during copy on Win7.
 
         UINT heightTrim = 0;
-        std::for_each(m_frameData.crbegin(), m_frameData.crend(), [=, &destFrame, &heightTrim](const TaskData& d) 
+        std::vector<completion_future> copyResults(m_frameData.size());
+        int i = 0;
+        std::for_each(m_frameData.crbegin(), m_frameData.crend(), [=, &i, &copyResults, &destFrame, &heightTrim](const TaskData& d) 
         {
-            CopyOut(*d.frames[current].get(), destFrame, d.startHeight, d.EndHeight() - heightTrim);
+            copyResults[i++] = CopyOutAsync(*d.frames[current].get(), destFrame, d.startHeight, d.EndHeight() - heightTrim);
             heightTrim = (simplifierNeighborWindow + FrameProcessorAmp::EdgeBorderWidth) / 2;
         });
-    } 
+        parallel_for_each(copyResults.cbegin(), copyResults.cend(), [](const completion_future& f) { f.wait(); });
+    }
 
 private:
     // Swap edges after each iteration of the color simplifier to avoid edge effects. This involves copying data back to
