@@ -249,6 +249,17 @@ void TextureReadingAndWritingWithViewsExample()
     {
         textVw.set(idx, int_2(1, 1)); 
     });
+
+    // THIS CODE WILL THROW A runtime_exception
+    /*
+    std::vector<int> input((rows * cols), 1);
+    texture<int, 2> text2(rows, cols, input.data(), input.size() * sizeof(int), 32u);
+    writeonly_texture_view<int, 2> outputTxVw(text2); 
+    parallel_for_each(outputTxVw.extent, [outputTxVw, &text2](index<2> idx) restrict(amp)
+    {
+        outputTxVw.set(idx, text2[idx] + 1);
+    }); 
+    */
 }
 
 void InteropFromD3DExample()

@@ -72,7 +72,7 @@ public:
             copyResults[i + numAccs] = copy_async(velSrc, m_hostVel.begin() + rangeStart); 
         });
 
-        parallel_for_each(copyResults.cbegin(), copyResults.cend(), [](const completion_future& r) { r.wait(); });
+        parallel_for_each(copyResults.cbegin(), copyResults.cend(), [](const completion_future& f) { f.wait(); });
 
         // Sync updated particles back onto all accelerators. Even for N=58368 simple copy is faster than
         // only copying updated data to individual accelerator.
@@ -85,6 +85,6 @@ public:
             copyResults[i + numAccs] = copy_async(m_hostVel.begin(), particleData[i]->DataNew->vel);
         });
 
-        parallel_for_each(copyResults.cbegin(), copyResults.cend(), [] (const completion_future& r) { r.wait(); });
+        parallel_for_each(copyResults.cbegin(), copyResults.cend(), [] (const completion_future& f) { f.wait(); });
     }
 };
