@@ -77,7 +77,7 @@ void CheckMatrix(const T* const data, int size)
 #ifdef _DEBUG
 static const int tileSize = 2;
 #else
-static const int tileSize = 32;
+static const int tileSize = 16;
 #endif
 
 int main()
@@ -103,7 +103,7 @@ int main()
 #ifdef _DEBUG
     int size = tileSize * 3;
 #else
-    int size = tileSize * 300;
+    int size = tileSize * 600;
 #endif
     TransposeSimpleExample(size);
     TransposeSimpleExample(size + tileSize);
