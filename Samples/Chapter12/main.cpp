@@ -98,6 +98,7 @@ int main()
 
     AtomicExample();
 
+    // TODO_AMP: Reinstate this when the driver bug is fixed.
     //TdrExample();
 
 #ifdef _DEBUG
@@ -414,7 +415,7 @@ void TransposeTruncatedExample(int matrixSize)
                     for (idx0 = computeDomain[0]; idx0 < inDataView.extent[0]; idx0++) 
                         outDataView(idx1, idx0) = inDataView(idx0, idx1); 
                 }
-                if (isRightMost && isBottomMost) 
+                if (isRightMost & isBottomMost) 
                 { 
                     for (idx0 = computeDomain[0] + 1; idx0 < inDataView.extent[0]; idx0++)
                         for (idx1 = computeDomain[1] + 1; idx1 < inDataView.extent[1]; idx1++) 
@@ -482,7 +483,7 @@ void TransposeTruncatedExample2(int matrixSize)
                     idx0 = tidx.global[0] + bottomMargin;
                     outDataView(idx1, idx0) = inDataView(idx0, idx1);
                 }
-                if (isRightMost && isBottomMost) 
+                if (isRightMost & isBottomMost) 
                 { 
                     idx0 = tidx.global[0] + bottomMargin;
                     idx1 = tidx.global[1] + rightMargin;
