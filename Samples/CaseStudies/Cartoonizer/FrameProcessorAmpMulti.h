@@ -81,6 +81,7 @@ public:
     {
         assert(simplifierNeighborWindow % 2 == 0);
         assert(phases > 0);
+        const UINT borderHeight = simplifierNeighborWindow / 2;
 
         ConfigureFrameBuffers(m_frameData, srcFrame, simplifierNeighborWindow + FrameProcessorAmp::EdgeBorderWidth);
 
@@ -100,7 +101,6 @@ public:
                     simplifierNeighborWindow);
             });
 
-            const UINT borderHeight = simplifierNeighborWindow / 2;
             for (UINT d = 0; d < m_frameData.size() - 1; ++d)
             {
                 SwapEdges(m_frameData[d].frames[next].get(), m_frameData[d+1].frames[next].get(), 

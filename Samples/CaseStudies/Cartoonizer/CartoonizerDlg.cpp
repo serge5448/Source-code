@@ -121,8 +121,6 @@ BOOL CartoonizerDlg::OnInitDialog()
     //
     // {250} normal block at 0x000000953A400980, 152 bytes long.
     //  Data: <  ?:    0M<=    > 10 D0 3F 3A 95 00 00 00 30 4D 3C 3D 95 00 00 00 
-    //
-    // See the C++ AMP blog for further details.
 
     CDialogEx::OnInitDialog();
     SetIcon(m_hIcon, true);
@@ -211,15 +209,9 @@ BOOL CartoonizerDlg::OnInitDialog()
     {
         AddComboItem(pDropDown, processorNames, kAmpMultiSimple);
         pDropDown->SetCurSel(AddComboItem(pDropDown, processorNames, kAmpMultiTiled));
-
-        // TODO_AMP: Resolve this issue.
-        // Only enable forked pipeline on Windows 8.
-        //if (isWindows8)
-        {
-            AddComboItem(pDropDown, processorNames, kAmpSimplePipeline);
-            pDropDown->SetCurSel(AddComboItem(pDropDown, processorNames, kAmpTiledPipeline));
-            AddComboItem(pDropDown, processorNames, kAmpTexturePipeline);
-        }
+        AddComboItem(pDropDown, processorNames, kAmpSimplePipeline);
+        pDropDown->SetCurSel(AddComboItem(pDropDown, processorNames, kAmpTiledPipeline));
+        AddComboItem(pDropDown, processorNames, kAmpTexturePipeline);
     }
 
     //  Dynamically set slider ranges.
@@ -531,7 +523,7 @@ void CartoonizerDlg::OnBnClickedButtonStart()
 
     m_pipeline = std::unique_ptr<ImagePipeline>(
         new ImagePipeline(this, reader, m_frameProcessorType, 
-                          kPipelineCapacity, m_cancelMessage, m_errorMessages));
+            kPipelineCapacity, m_cancelMessage, m_errorMessages));
     m_pipelinePerformance = PipelinePerformanceData(m_pipeline->GetCartoonizerProcessorCount());
     m_pipeline->start();
     m_pipelinePerformance.Start();
