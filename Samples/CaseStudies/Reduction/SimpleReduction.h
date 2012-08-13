@@ -41,6 +41,8 @@ public:
         // Copy data
         array<int, 1> a(elementCount, source.cbegin(), source.cend(), view);
         std::vector<int> result(1);
+        int tailResult = (elementCount % 2) ? source[elementCount - 1] : 0;
+        array_view<int, 1> tailResultView(1, &tailResult);
         computeTime = TimeFunc(view, [&]() 
         {
            for (int stride = (elementCount / 2); stride > 0; stride /= 2)
@@ -51,13 +53,14 @@ public:
 
                     // If there are an odd number of elements then the first thread adds the last element.
                     if ((idx[0] == 0) && (stride & 0x1) && (stride != 1))
-                        a[idx] += a[stride - 1];
+                        tailResultView[idx] += a[stride - 1];
                 });
             }
 
             //  Only copy out the first element in the array as this contains the final answer.
             copy(a.section(0, 1), result.begin());
         });
-        return result[0];
+        tailResultView.synchronize();
+        return result[0] + tailResult;
     }
 };

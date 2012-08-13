@@ -40,6 +40,8 @@ public:
         std::vector<int> writableSource(source.size());
         std::copy(source.cbegin(), source.cend(), writableSource.begin());
         array_view<int, 1> av(elementCount, writableSource);
+        int tailResult = (elementCount % 2) ? source[elementCount - 1] : 0;
+        array_view<int, 1> tailResultView(1, &tailResult);
 
         std::vector<int> result(1);
         computeTime = TimeFunc(view, [&]() 
@@ -52,7 +54,7 @@ public:
 
                     // If there are an odd number of elements then the first thread adds the last element.
                     if ((idx[0] == 0) && (stride & 0x1) && (stride != 1))
-                        av[idx] += av[stride - 1];
+                        tailResultView[idx] += av[stride - 1];
                 });
             }
 
@@ -60,6 +62,7 @@ public:
             copy(av.section(0, 1), result.begin());
             av.discard_data();
         });
-        return result[0];
+        tailResultView.synchronize();
+        return result[0] + tailResult;
     }
 };
