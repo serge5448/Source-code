@@ -35,8 +35,8 @@ void TdrExample();
 void TransposeExample(int matrixSize);
 void TransposeSimpleExample(int matrixSize);
 void TransposePaddedExample(int matrixSize);
-void TransposeTruncatedExample(int matrixSize);
-void TransposeTruncatedExample2(int matrixSize);
+void TransposeTruncatedEdgeThreadOnlyExample(int matrixSize);
+void TransposeTruncatedMarginThreadsExample(int matrixSize);
 void TransPoseTruncatedSectionsExample(int matrixSize);
 
 //--------------------------------------------------------------------------------------
@@ -50,9 +50,10 @@ void PrintMatrix(const T* const data, int size)
 #ifndef _DEBUG
     return;
 #endif
-    for (int i = 0; i < min(10, size); ++i)
+    const int maxSize = 20;
+    for (int i = 0; i < min(maxSize, size); ++i)
     {
-        for (int j = 0; j < min(10, size); ++j)
+        for (int j = 0; j < min(maxSize, size); ++j)
             std::wcout << data[i * size + j] << " ";
         std::wcout << std::endl;
     }
@@ -75,9 +76,9 @@ void CheckMatrix(const T* const data, int size)
 }
 
 #ifdef _DEBUG
-static const int tileSize = 2;
+static const int tileSize = 4;
 #else
-static const int tileSize = 16;
+static const int tileSize = 32;
 #endif
 
 int main()
@@ -104,7 +105,7 @@ int main()
 #ifdef _DEBUG
     int size = tileSize * 3;
 #else
-    int size = tileSize * 600;
+    int size = 9600;
 #endif
     TransposeSimpleExample(size);
     TransposeSimpleExample(size + tileSize);
@@ -116,13 +117,13 @@ int main()
     TransposePaddedExample(size + tileSize / 2);
     TransposePaddedExample(size + tileSize - 1);
 
-    TransposeTruncatedExample(size + 1);
-    TransposeTruncatedExample(size + tileSize / 2);
-    TransposeTruncatedExample(size + tileSize - 1);
+    TransposeTruncatedEdgeThreadOnlyExample(size + 1);
+    TransposeTruncatedEdgeThreadOnlyExample(size + tileSize / 2);
+    TransposeTruncatedEdgeThreadOnlyExample(size + tileSize - 1);
 
-    TransposeTruncatedExample2(size + 1);
-    TransposeTruncatedExample2(size + tileSize / 2);
-    TransposeTruncatedExample2(size + tileSize - 1);
+    TransposeTruncatedMarginThreadsExample(size + 1);
+    TransposeTruncatedMarginThreadsExample(size + tileSize / 2);
+    TransposeTruncatedMarginThreadsExample(size + tileSize - 1);
 
     TransPoseTruncatedSectionsExample(size + 1);
     TransPoseTruncatedSectionsExample(size + tileSize / 2);
@@ -176,7 +177,7 @@ void AtomicExample()
     count.synchronize();
     std::wcout << "Calculating values for " << theData.size() << " elements " << std::endl;
     std::wcout << "A total of " << exceptionalOccurrences << " exceptional occurrences were detected." 
-        << std::endl;
+        << std::endl << std::endl;
 }
 
 //--------------------------------------------------------------------------------------
@@ -369,7 +370,7 @@ void TransposePaddedExample(int matrixSize)
 //  Tiled and truncated matrix transpose example.
 //--------------------------------------------------------------------------------------
 
-void TransposeTruncatedExample(int matrixSize)
+void TransposeTruncatedEdgeThreadOnlyExample(int matrixSize)
 {
     std::vector<unsigned int> inData(matrixSize * matrixSize);
     std::vector<unsigned int> outData(matrixSize * matrixSize, 0u);
@@ -417,8 +418,8 @@ void TransposeTruncatedExample(int matrixSize)
                 }
                 if (isRightMost & isBottomMost) 
                 { 
-                    for (idx0 = computeDomain[0] + 1; idx0 < inDataView.extent[0]; idx0++)
-                        for (idx1 = computeDomain[1] + 1; idx1 < inDataView.extent[1]; idx1++) 
+                    for (idx0 = computeDomain[0]; idx0 < inDataView.extent[0]; idx0++)
+                        for (idx1 = computeDomain[1]; idx1 < inDataView.extent[1]; idx1++) 
                             outDataView(idx1, idx0) = inDataView(idx0, idx1); 
                 }
             }
@@ -435,7 +436,7 @@ void TransposeTruncatedExample(int matrixSize)
     std::wcout << std::endl;
 }
 
-void TransposeTruncatedExample2(int matrixSize)
+void TransposeTruncatedMarginThreadsExample(int matrixSize)
 {
     std::vector<unsigned int> inData(matrixSize * matrixSize);
     std::vector<unsigned int> outData(matrixSize * matrixSize, 0);
