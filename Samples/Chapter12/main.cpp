@@ -35,7 +35,6 @@ void TdrExample();
 void TransposeExample(int matrixSize);
 void TransposeSimpleExample(int matrixSize);
 void TransposePaddedExample(int matrixSize);
-void TransposeTruncatedEdgeThreadOnlyExample(int matrixSize);
 void TransposeTruncatedMarginThreadsExample(int matrixSize);
 void TransPoseTruncatedSectionsExample(int matrixSize);
 
@@ -78,7 +77,7 @@ void CheckMatrix(const T* const data, int size)
 #ifdef _DEBUG
 static const int tileSize = 4;
 #else
-static const int tileSize = 32;
+static const int tileSize = 16;
 #endif
 
 int main()
@@ -105,8 +104,9 @@ int main()
 #ifdef _DEBUG
     int size = tileSize * 3;
 #else
-    int size = 9600;
+    int size = 8800;
 #endif
+
     TransposeSimpleExample(size);
     TransposeSimpleExample(size + tileSize);
 
@@ -116,10 +116,6 @@ int main()
     TransposePaddedExample(size + 1);
     TransposePaddedExample(size + tileSize / 2);
     TransposePaddedExample(size + tileSize - 1);
-
-    TransposeTruncatedEdgeThreadOnlyExample(size + 1);
-    TransposeTruncatedEdgeThreadOnlyExample(size + tileSize / 2);
-    TransposeTruncatedEdgeThreadOnlyExample(size + tileSize - 1);
 
     TransposeTruncatedMarginThreadsExample(size + 1);
     TransposeTruncatedMarginThreadsExample(size + tileSize / 2);
@@ -369,72 +365,6 @@ void TransposePaddedExample(int matrixSize)
 //--------------------------------------------------------------------------------------
 //  Tiled and truncated matrix transpose example.
 //--------------------------------------------------------------------------------------
-
-void TransposeTruncatedEdgeThreadOnlyExample(int matrixSize)
-{
-    std::vector<unsigned int> inData(matrixSize * matrixSize);
-    std::vector<unsigned int> outData(matrixSize * matrixSize, 0u);
-    unsigned int v = 0;
-    std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
-
-    array_view<const unsigned int, 2> inDataView(matrixSize, matrixSize, inData);
-    array_view<unsigned int, 2> outDataView(matrixSize, matrixSize, outData);
-    outDataView.discard_data();
-
-    tiled_extent<tileSize, tileSize> computeDomain = inDataView.extent.tile<tileSize, tileSize>();
-    computeDomain = computeDomain.truncate();
-
-    accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
-    double elapsedTime = TimeFunc(view, [&]() 
-    {
-        parallel_for_each(computeDomain, [=](tiled_index<tileSize, tileSize> tidx) restrict(amp)
-        {     
-            tile_static unsigned int localData[tileSize][tileSize];
-            localData[tidx.local[1]][tidx.local[0]] = inDataView[tidx.global];
-            tidx.barrier.wait();
-            index<2> outIdx(index<2>(tidx.tile_origin[1], tidx.tile_origin[0]) + tidx.local);
-            outDataView[outIdx] = localData[tidx.local[0]][tidx.local[1]];
-
-            // Handle tuncated elements using edge thread.
-
-            bool isRightMost = tidx.global[1] == computeDomain[1] - 1; 
-            bool isBottomMost = tidx.global[0] == computeDomain[0] - 1; 
-
-            // Exit branching as quickly as possible as the majority of threads will not meet the boundary criteria
-            if (isRightMost | isBottomMost)
-            {
-                int idx0, idx1;
-                if (isRightMost)
-                {
-                    idx0 = tidx.global[0]; 
-                    for (idx1 = computeDomain[1]; idx1 < inDataView.extent[1]; idx1++) 
-                        outDataView(idx1, idx0) = inDataView(idx0, idx1); 
-                }
-                if (isBottomMost)
-                {
-                    idx1 = tidx.global[1];
-                    for (idx0 = computeDomain[0]; idx0 < inDataView.extent[0]; idx0++) 
-                        outDataView(idx1, idx0) = inDataView(idx0, idx1); 
-                }
-                if (isRightMost & isBottomMost) 
-                { 
-                    for (idx0 = computeDomain[0]; idx0 < inDataView.extent[0]; idx0++)
-                        for (idx1 = computeDomain[1]; idx1 < inDataView.extent[1]; idx1++) 
-                            outDataView(idx1, idx0) = inDataView(idx0, idx1); 
-                }
-            }
-        });
-    });
-
-    outDataView.synchronize();
-    std::wcout << "Transpose truncated, edge thread handles truncated elements" << std::endl;
-    std::wcout << "  Matrix size " << matrixSize << " x " << matrixSize << ", truncated size " 
-        << computeDomain[0] << " x " << computeDomain[1] << std::endl;
-    std::wcout << "  Elapsed time " << elapsedTime << " ms" << std::endl;
-    CheckMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
-    PrintMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
-    std::wcout << std::endl;
-}
 
 void TransposeTruncatedMarginThreadsExample(int matrixSize)
 {
