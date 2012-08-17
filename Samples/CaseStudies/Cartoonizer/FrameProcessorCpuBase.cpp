@@ -34,7 +34,7 @@ using namespace concurrency;
 void FrameProcessorCpuBase::ConfigureFrameBuffers(const Gdiplus::BitmapData& srcFrame)
 {
     // Only recalculate frames if the heights have changed as this may be expensive.
-    if ((m_height == srcFrame.Height) || (m_width == srcFrame.Width))
+    if ((m_height == srcFrame.Height) && (m_width == srcFrame.Width))
         return;
     m_height = srcFrame.Height;
     m_width = srcFrame.Width;
