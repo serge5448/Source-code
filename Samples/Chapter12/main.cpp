@@ -240,8 +240,7 @@ void TransposeSimpleExample(int matrixSize)
 
     std::vector<unsigned int> inData(matrixSize * matrixSize);
     std::vector<unsigned int> outData(matrixSize * matrixSize, 0u);
-    unsigned int v = 0;
-    std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
+    std::iota(inData.begin(), inData.end(), 0u);
 
     array_view<const unsigned int, 2> inDataView(matrixSize, matrixSize, inData);
     array_view<unsigned int, 2> outDataView(matrixSize, matrixSize, outData);
@@ -276,8 +275,7 @@ void TransposeExample(int matrixSize)
 
     std::vector<unsigned int> inData(matrixSize * matrixSize);
     std::vector<unsigned int> outData(matrixSize * matrixSize, 0u);
-    unsigned int v = 0;
-    std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
+    std::iota(inData.begin(), inData.end(), 0u);
 
     array_view<const unsigned int, 2> inDataView(matrixSize, matrixSize, inData);
     array_view<unsigned int, 2> outDataView(matrixSize, matrixSize, outData);
@@ -327,8 +325,7 @@ void TransposePaddedExample(int matrixSize)
 {
     std::vector<unsigned int> inData(matrixSize * matrixSize);
     std::vector<unsigned int> outData(matrixSize * matrixSize, 0u);
-    unsigned int v = 0;
-    std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
+    std::iota(inData.begin(), inData.end(), 0u);
 
     array_view<const unsigned int, 2> inDataView(matrixSize, matrixSize, inData);
     array_view<unsigned int, 2> outDataView(matrixSize, matrixSize, outData);
@@ -370,8 +367,7 @@ void TransposeTruncatedMarginThreadsExample(int matrixSize)
 {
     std::vector<unsigned int> inData(matrixSize * matrixSize);
     std::vector<unsigned int> outData(matrixSize * matrixSize, 0);
-    unsigned int v = 0;
-    std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
+    std::iota(inData.begin(), inData.end(), 0u);
 
     array_view<const unsigned int, 2> inDataView(matrixSize, matrixSize, inData);
     array_view<unsigned int, 2> outDataView(matrixSize, matrixSize, outData);
@@ -464,8 +460,7 @@ void TransPoseTruncatedSectionsExample(int matrixSize)
 {
     std::vector<unsigned int> inData(matrixSize * matrixSize);
     std::vector<unsigned int> outData(matrixSize * matrixSize, 0);
-    unsigned int v = 0;
-    std::generate(inData.begin(), inData.end(), [&v]() { return v++; });
+    std::iota(inData.begin(), inData.end(), 0u);
 
     array_view<const unsigned int, 2> inDataView(matrixSize, matrixSize, inData);
     array_view<unsigned int, 2> outDataView(matrixSize, matrixSize, outData);

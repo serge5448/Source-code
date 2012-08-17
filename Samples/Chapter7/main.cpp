@@ -319,8 +319,7 @@ void MemoryAccessExample()
     array<float, 2> outData(matrixSize, matrixSize);
 
     std::vector<float> data(matrixSize * matrixSize);
-    float v = 0.0f;
-    std::generate(data.begin(), data.end(), [&v]() { return v++; });
+    std::iota(data.begin(), data.end(), 0.0f);
     copy(data.cbegin(), data.cend(), inData);
 
     accelerator_view view = accelerator(accelerator::default_accelerator).default_view;

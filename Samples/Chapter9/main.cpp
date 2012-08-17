@@ -208,8 +208,7 @@ void MatrixSingleGpuExample(const int rows, const int cols, const int shift)
 
     std::vector<float> vA(rows * cols);
     std::vector<float> vC(rows * cols);
-    float n = 0.0f;
-    std::generate(vA.begin(), vA.end(), [&n]() { return n++; });
+    std::iota(vA.begin(), vA.end(), 0.0f);
 
     //  Calculation
 
@@ -284,8 +283,7 @@ void MatrixMultiGpuExample(const std::vector<accelerator>& accls, const int rows
 
     std::vector<float> vA(rows * cols);
     std::vector<float> vC(rows * cols);
-    float n = 0.0;
-    std::generate(vA.begin(), vA.end(), [&n]() { return n++; });
+    std::iota(vA.begin(), vA.end(), 0.0f);
 
     //  Calculation
 
@@ -326,8 +324,7 @@ void MatrixMultiGpuSequentialExample(const std::vector<accelerator>& accls, cons
 
     std::vector<float> vA(rows * cols);
     std::vector<float> vC(rows * cols);
-    float n = 0.0;
-    std::generate(vA.begin(), vA.end(), [&n]() { return n++; });
+    std::iota(vA.begin(), vA.end(), 0.0f);
     std::vector<array_view<float, 2>> avCs;
 
     //  Calculation
@@ -375,8 +372,7 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
 
     std::vector<float> vA(rows * cols);
     std::vector<float> vC(rows * cols);
-    float n = 0.0;
-    std::generate(vA.begin(), vA.end(), [&n]() { return n++; });
+    std::iota(vA.begin(), vA.end(), 0.0f);
 
     std::vector<array<float, 2>> arrAs;
     std::vector<array<float, 2>> arrCs;
