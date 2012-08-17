@@ -83,3 +83,16 @@ inline T min(T a, T b) restrict(amp) { return ((a < b) ? a : b); }
 
 template<typename T> 
 inline T max(T a, T b) restrict(amp) { return ((a > b) ? a : b); }
+
+//--------------------------------------------------------------------------------------
+//  Detect if this is a Windows 8 OS.
+//--------------------------------------------------------------------------------------
+
+inline bool IsWindows8()
+{
+    OSVERSIONINFO verInfo;
+    ZeroMemory(&verInfo, sizeof(OSVERSIONINFO));
+    verInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&verInfo);
+    return (verInfo.dwMajorVersion >= 6) && (verInfo.dwMinorVersion >= 2);
+}

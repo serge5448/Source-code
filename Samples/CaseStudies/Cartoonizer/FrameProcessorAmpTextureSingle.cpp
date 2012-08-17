@@ -67,7 +67,10 @@ void FrameProcessorAmpTextureSingle::ProcessImage(const Gdiplus::BitmapData& src
         simplifierNeighborWindow);
     std::swap(current, next);
 
-    copy(*m_frames[current].get(), destFrame.Scan0, frame_size);
+    // Make sure that and preceeding kernel is finished before starting to copy data from the GPU and reduce the time copy may take a lock for.
+    completion_future f =  copy_async(*m_frames[current].get(), destFrame.Scan0, frame_size);
+    m_accelerator.default_view.wait();
+    f.get();
 }
 
 void FrameProcessorAmpTextureSingle::ConfigureFrameBuffers(const Gdiplus::BitmapData& srcFrame)

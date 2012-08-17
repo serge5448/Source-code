@@ -259,6 +259,7 @@
     <ClInclude Include=".\ImageCartoonizerAgentBase.h" />
     <ClInclude Include="ImageCartoonizerAgent.h" />
     <ClInclude Include="ImageCartoonizerAgentParallel.h" />
+    <ClInclude Include="ImageCartoonizerAgentParallelWin7.h" />
     <ClInclude Include="ImageDisplayAgent.h" />
     <ClInclude Include="ImagePipeline.h" />
     <ClInclude Include="ImageInfo.h" />

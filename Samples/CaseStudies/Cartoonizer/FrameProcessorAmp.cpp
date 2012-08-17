@@ -68,7 +68,11 @@ void CopyOut(array<ArgbPackedPixel, 2>& currentImg, Gdiplus::BitmapData& destFra
 {
     // Because ARGB is stored in four bytes the Bitmap::Width will always be equal to the Bitmap::Stride / sizeof(ArgbPackedPixel), no padding.
     stdext::checked_array_iterator<ArgbPackedPixel*> iter = stdext::make_checked_array_iterator<ArgbPackedPixel*>(static_cast<ArgbPackedPixel*>(destFrame.Scan0), destFrame.Height * destFrame.Width);
-    copy(currentImg.section(0, 0, destFrame.Height, destFrame.Width), iter);
+
+    // Make sure that and preceeding kernel is finished before starting to copy data from the GPU and reduce the time copy may take a lock for.
+    completion_future f = copy_async(currentImg.section(0, 0, destFrame.Height, destFrame.Width), iter);
+    currentImg.accelerator_view.wait();
+    f.get();
 }
 
 completion_future CopyOutAsync(array<ArgbPackedPixel, 2>& currentImg, Gdiplus::BitmapData& destFrame, UINT startHeight, UINT endHeight)
