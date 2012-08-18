@@ -107,9 +107,6 @@
     <ClInclude Include="IFrameReader.h" />
     <ClInclude Include="IFrameProcessor.h" />
     <ClInclude Include="FrameProcessorFactory.h" />
-    <ClInclude Include="ImageCartoonizerAgentParallelWin7.h">
-      <Filter>Pipeline</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImageInfo.cpp">
