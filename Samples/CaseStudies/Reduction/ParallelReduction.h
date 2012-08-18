@@ -32,8 +32,8 @@ class ParallelReduction : public IReduce
 public:
     int Reduce(accelerator_view& view, const std::vector<int>& source, double& computeTime) const
     {
-        int total;   
-        computeTime = TimeFunc(view, [&]() 
+        int total;
+        computeTime = TimeFunc(view, [&]()
         {
             total = parallel_reduce(source.cbegin(), source.cend(), 0, std::plus<int>());
         });

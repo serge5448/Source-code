@@ -23,5 +23,6 @@
 class IReduce
 {
 public:
-    virtual int Reduce(accelerator_view& view, const std::vector<int>& source, double& computeTime) const = 0;
+    virtual int Reduce(accelerator_view& view, 
+        const std::vector<int>& source, double& computeTime) const = 0;
 };

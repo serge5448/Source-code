@@ -30,7 +30,7 @@ public:
     int Reduce(accelerator_view& view, const std::vector<int>& source, double& computeTime) const
     {
         int total = 0;
-        computeTime = TimeFunc(view, [&]() 
+        computeTime = TimeFunc(view, [&]()
         {
             total = std::accumulate(source.cbegin(), source.cend(), 0, std::plus<int>());
         });

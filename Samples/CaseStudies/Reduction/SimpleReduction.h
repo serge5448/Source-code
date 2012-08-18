@@ -32,7 +32,6 @@ using namespace concurrency;
 class SimpleReduction : public IReduce
 {
 public:
-
     int Reduce(accelerator_view& view, const std::vector<int>& source, double& computeTime) const
     {
         assert(source.size() <= UINT_MAX);
