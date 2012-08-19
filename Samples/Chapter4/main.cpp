@@ -121,20 +121,19 @@ public:
 
 int main()
 {
-    const int M = 64;
-    const int N = 512;
-    const int W = 256;
+    const int M = 512;
+    const int N = 4096;
+    const int W = 512;
 
     accelerator defaultDevice(accelerator::default_accelerator);
     accelerator_view defaultView = defaultDevice.default_view;
 
-#ifndef _DEBUG
     std::wcout << L" Using device : " << defaultDevice.get_description() << std::endl;
+#ifndef _DEBUG
     if (defaultDevice == accelerator(accelerator::direct3d_ref))
         std::wcout << " WARNING!! No C++ AMP hardware accelerator detected, using the REF accelerator." << std::endl << 
             "To see better performance run on C++ AMP\ncapable hardware." << std::endl;
 #endif
-
     std::vector<float> vA(M * W);
     std::vector<float> vB(W * N);
     std::vector<float> vC(M * N);
@@ -244,5 +243,5 @@ int main()
         size_t i = std::distance(vC.cbegin(), firstMismatch.first);
         std::wcout << "vC[" << i << "] = " << *firstMismatch.first << ", vRef[" << i << "] = " << *firstMismatch.second << std::endl;
     }
-    std::wcout << " tiled " << ((firstMismatch.first == vC.end()) ? "PASSED" : "FAILED") << std::endl;
+    std::wcout << " non tiled " << ((firstMismatch.first == vC.end()) ? "PASSED" : "FAILED") << std::endl;
 }
