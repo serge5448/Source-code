@@ -121,9 +121,9 @@ public:
 
 int main()
 {
-    const int M = 512;
-    const int N = 4096;
-    const int W = 512;
+    const int M = 64;
+    const int N = 512;
+    const int W = 256;
 
     accelerator defaultDevice(accelerator::default_accelerator);
     accelerator_view defaultView = defaultDevice.default_view;
@@ -202,7 +202,7 @@ int main()
         MatrixMultiplyTiled(vC, vA, vB, M, N, W);
     });
 
-    std::wcout << std::endl << "GPU exec time (tiled - tile size is " << TileSize << ") including copy-in/out: " <<
+    std::wcout << std::endl << "GPU exec time (tiled - tile size is " << TileSize << ") " << std::endl << " including copy-in/out: " <<
         elapsedTime << " (ms)" << std::endl;
 
     // Compare tiled GPU and CPU results
@@ -232,7 +232,7 @@ int main()
         mC.synchronize();
     });
 
-    std::wcout << std::endl << "GPU functor exec time including copy-in/out: " <<
+    std::wcout << std::endl << "GPU functor (non tiled) exec time including copy-in/out: " <<
         elapsedTime << " (ms)" << std::endl;
 
     // Compare simple GPU functor and CPU results
@@ -243,5 +243,5 @@ int main()
         size_t i = std::distance(vC.cbegin(), firstMismatch.first);
         std::wcout << "vC[" << i << "] = " << *firstMismatch.first << ", vRef[" << i << "] = " << *firstMismatch.second << std::endl;
     }
-    std::wcout << " non tiled " << ((firstMismatch.first == vC.end()) ? "PASSED" : "FAILED") << std::endl;
+    std::wcout << " functor " << ((firstMismatch.first == vC.end()) ? "PASSED" : "FAILED") << std::endl;
 }
