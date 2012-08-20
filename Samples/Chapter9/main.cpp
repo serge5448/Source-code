@@ -480,6 +480,28 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
 }
 
 //--------------------------------------------------------------------------------------
+//  Small example showing asynchronous copy pattern.
+//--------------------------------------------------------------------------------------
+
+void AsyncCopyExample()
+{
+    std::vector<float> resultData(100000, 0.0f);
+    array<float, 1> resultArr(resultData.size());
+
+    //  Synchronous version, may be performance impact when using multi-GPU on Windows 7.
+
+    // parallel_for_each calculates resultArr data...
+    copy(resultArr, resultData.begin());
+
+    //  Better version, considerably better performance on multi-GPU on Windows 7.
+
+    // parallel_for_each calculates resultArr data...
+    completion_future f = copy_async(resultArr, resultData.begin());
+    resultArr.accelerator_view.wait();
+    f.get();
+}
+
+//--------------------------------------------------------------------------------------
 //  Master worker example for load balancing across multiple accelerators
 //--------------------------------------------------------------------------------------
 
