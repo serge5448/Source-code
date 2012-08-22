@@ -265,12 +265,6 @@ void ApplyEdgeDetectionHelper(const array<ArgbPackedPixel, 2>& srcFrame,
                               UINT simplifierNeighborWindow)
 {
     const float_3 W(ImageUtils::W);
-    const float alpha = 0.3f;
-    const float beta = 0.8f;
-    const float s0 = 0.054f;
-    const float s1 = 0.064f;
-    const float a0 = 0.3f;
-    const float a1 = 0.7f;
     extent<2> ext(srcFrame.extent - extent<2>(simplifierNeighborWindow, simplifierNeighborWindow));
 
     extent<2> computeDomain(ext - 
@@ -287,12 +281,6 @@ void ApplyEdgeDetectionTiledHelper(const array<ArgbPackedPixel, 2>& srcFrame,
                                    UINT simplifierNeighborWindow)
 {
     const float_3 W(ImageUtils::W);
-    const float alpha = 0.3f;
-    const float beta = 0.8f;
-    const float s0 = 0.054f;
-    const float s1 = 0.064f;
-    const float a0 = 0.3f;
-    const float a1 = 0.7f;
     extent<2> ext(srcFrame.extent - extent<2>(simplifierNeighborWindow, simplifierNeighborWindow));
 
     tiled_extent<FrameProcessorAmp::TileSize, FrameProcessorAmp::TileSize> computeDomain = GetTiledExtent(srcFrame.extent);

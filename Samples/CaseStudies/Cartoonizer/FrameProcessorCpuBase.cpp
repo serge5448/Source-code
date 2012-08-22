@@ -156,9 +156,9 @@ void FrameProcessorCpuBase::ApplyEdgeDetectionSingle(const Gdiplus::BitmapData& 
             float i = (1 - beta) * ImageUtils::SmoothStep(s0, s1, edgeS) + beta * ImageUtils::SmoothStep(a0, a1, edgeA);
 
             float oneMinusi = 1 - i;
-            COLORREF clr = BitmapUtils::GetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp);
-            COLORREF newClr = RGB(GetRValue(clr) * oneMinusi, GetGValue(clr) * oneMinusi, GetBValue(clr) * oneMinusi);
-            BitmapUtils::SetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp, newClr);            
+            COLORREF srcClr = BitmapUtils::GetPixel(static_cast<byte*>(srcFrame.Scan0), x, y, srcFrame.Stride, bpp);
+            COLORREF destClr = RGB(GetRValue(srcClr) * oneMinusi, GetGValue(srcClr) * oneMinusi, GetBValue(srcClr) * oneMinusi);
+            BitmapUtils::SetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp, destClr);            
         }
 }
 
@@ -190,9 +190,9 @@ void FrameProcessorCpuBase::ApplyEdgeDetectionMulti(const Gdiplus::BitmapData& s
             float i = (1 - beta) * ImageUtils::SmoothStep(s0, s1, edgeS) + beta * ImageUtils::SmoothStep(a0, a1, edgeA);
 
             float oneMinusi = 1 - i;
-            COLORREF clr = BitmapUtils::GetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp);
-            COLORREF newClr = RGB(GetRValue(clr) * oneMinusi, GetGValue(clr) * oneMinusi, GetBValue(clr) * oneMinusi);
-            BitmapUtils::SetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp, newClr);            
+            COLORREF srcClr = BitmapUtils::GetPixel(static_cast<byte*>(srcFrame.Scan0), x, y, srcFrame.Stride, bpp);
+            COLORREF destClr = RGB(GetRValue(srcClr) * oneMinusi, GetGValue(srcClr) * oneMinusi, GetBValue(srcClr) * oneMinusi);
+            BitmapUtils::SetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp, destClr);            
         }
     });
 }

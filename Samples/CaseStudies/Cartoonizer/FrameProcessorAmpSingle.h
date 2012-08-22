@@ -73,7 +73,7 @@ public:
         }
 
         ApplyEdgeDetection(*m_frames[current].get(), *m_frames[next].get(), 
-            *m_frames[kOriginal].get(), simplifierNeighborWindow);
+             *m_frames[kOriginal].get(), simplifierNeighborWindow);
         std::swap(current, next);
         CopyOut(*m_frames[current].get(), destFrame);
     }
