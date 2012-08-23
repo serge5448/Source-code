@@ -143,7 +143,7 @@ void TextureCopyExample()
     
     f.then([=](){ std::wcout << "Copy complete" << std::endl; });
 
-    f.wait();
+    f.get();
     std::wcout << "Copy complete" << std::endl;
 }
 

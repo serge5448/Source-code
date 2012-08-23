@@ -291,7 +291,7 @@ void AsyncCopyingExample()
 
     // Do other work on CPU or GPU that does not modify cpuData or access gpuData
 
-    f.wait();
+    f.get();
 
     parallel_for_each(gpuData.extent, [=, &gpuData](index<1> idx) restrict(amp)
     {
@@ -302,7 +302,7 @@ void AsyncCopyingExample()
 
     // Do other work...
 
-    f.wait();
+    f.get();
 }
 
 //--------------------------------------------------------------------------------------

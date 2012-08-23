@@ -593,7 +593,7 @@ void CompletionFutureExample()
         std::cout << "  Finished asynchronous copy!" << std::endl; 
     });
     std::cout << "Do more work on this thread..." << std::endl;
-    f.wait();
+    f.get();
     std::cout << "Data copy completed." << std::endl;
 }
 
