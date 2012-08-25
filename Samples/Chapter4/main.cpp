@@ -30,8 +30,8 @@ using namespace concurrency;
 //--------------------------------------------------------------------------------------
 
 void MatrixMultiply(std::vector<float>& vC, 
-         const std::vector<float>& vA, 
-         const std::vector<float>& vB, int M, int N, int W)
+    const std::vector<float>& vA, 
+    const std::vector<float>& vB, int M, int N, int W)
 {
     array_view<const float,2> a(M, W, vA);
     array_view<const float,2> b(W, N, vB);
@@ -55,18 +55,40 @@ void MatrixMultiply(std::vector<float>& vC,
 
 static const int TileSize = 16;
 
-void MatrixMultiplyTiled(std::vector<float>& vC, 
-         const std::vector<float>& vA, 
-         const std::vector<float>& vB, 
-         int M, int N, int W)
+void MatrixMultiplyTiled(std::vector<float>& vC,
+    const std::vector<float>& vA,
+    const std::vector<float>& vB,
+    int M, int N, int W)
+{
+    array_view<const float,2> a(M, W, vA);
+    array_view<const float,2> b(W, N, vB);
+    array_view<float,2> c(M, N, vC);
+    c.discard_data();
+    parallel_for_each(c.extent.tile<TileSize,TileSize>(),
+        [=](tiled_index<TileSize, TileSize> tidx) restrict(amp)
+    {
+        int row = tidx.global[0];
+        int col = tidx.global[1];
+        float sum = 0.0f;
+        for(int i = 0; i < W; i++)
+            sum += a(row, i) * b(i, col);
+        c[tidx] = sum;
+    });
+    c.synchronize();
+}
+
+void MatrixMultiplyTiledWithTileStatic(std::vector<float>& vC, 
+    const std::vector<float>& vA, 
+    const std::vector<float>& vB, 
+    int M, int N, int W)
 {
     array_view<const float,2> a(M, W, vA);
     array_view<const float,2> b(W, N, vB);
     array_view<float,2> c(M, N, vC);
     c.discard_data();
 
-    parallel_for_each(c.extent.tile< TileSize, TileSize >(),
-        [=] (tiled_index< TileSize, TileSize> tidx) restrict(amp) 
+    parallel_for_each(c.extent.tile<TileSize, TileSize>(),
+        [=] (tiled_index<TileSize, TileSize> tidx) restrict(amp) 
     {
         int row = tidx.local[0]; 
         int col = tidx.local[1];
@@ -214,6 +236,30 @@ int main()
         std::wcout << "vC[" << i << "] = " << *firstMismatch.first << ", vRef[" << i << "] = " << *firstMismatch.second << std::endl;
     }
     std::wcout << " tiled " << ((firstMismatch.first == vC.end()) ? "PASSED" : "FAILED") << std::endl;
+
+    //--------------------------------------------------------------------------------------
+    //  GPU tiled matrix multiply with tile static memory
+    //--------------------------------------------------------------------------------------
+
+    static_assert((M % TileSize == 0) && (W % TileSize == 0) && (N % TileSize == 0), "Matrix dimensions must be a multiple of tile size.");
+
+    elapsedTime = TimeFunc([&]()
+    {
+        MatrixMultiplyTiledWithTileStatic(vC, vA, vB, M, N, W);
+    });
+
+    std::wcout << std::endl << "GPU exec time (tiled - tile size is " << TileSize << ") using tile_static memory " << std::endl << " including copy-in/out: " <<
+        elapsedTime << " (ms)" << std::endl;
+
+    // Compare tiled GPU and CPU results
+
+    firstMismatch = std::mismatch(vC.cbegin(), vC.cend(), vRef.cbegin(), [](float c, float r) { return (fabs(c - r) < 0.01); });
+    if (firstMismatch.first != vC.end())
+    {
+        size_t i = std::distance(vC.cbegin(), firstMismatch.first);
+        std::wcout << "vC[" << i << "] = " << *firstMismatch.first << ", vRef[" << i << "] = " << *firstMismatch.second << std::endl;
+    }
+    std::wcout << " tiled with tile_static " << ((firstMismatch.first == vC.end()) ? "PASSED" : "FAILED") << std::endl;
 
     //--------------------------------------------------------------------------------------
     //  GPU simple matrix multiply with functors
