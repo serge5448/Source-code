@@ -40,7 +40,6 @@ private:
     static const int m_tileSize = TSize;
 
 public:
-
     NBodyAmpTiled(float softeningSquared, float dampingFactor, float deltaTime, float particleMass) :
         m_softeningSquared(softeningSquared),
         m_dampingFactor(dampingFactor),

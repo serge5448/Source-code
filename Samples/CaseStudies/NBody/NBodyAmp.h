@@ -103,7 +103,8 @@ public:
     }  
 };
 
-std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles, accelerator_view renderView)
+std::vector<std::shared_ptr<TaskData>> CreateTasks(int numParticles, 
+    accelerator_view renderView)
 {
     std::vector<accelerator> gpuAccelerators = AmpUtils::GetGpuAccelerators();
     std::vector<std::shared_ptr<TaskData>> tasks;

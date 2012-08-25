@@ -233,7 +233,8 @@ void NBodySimpleMultiCore::Integrate(ParticleCpu* const pParticlesIn, ParticleCp
 //  Utility functions.
 //--------------------------------------------------------------------------------------
 
-void LoadClusterParticles(ParticleCpu* const pParticles, float_3 center, float_3 velocity, float spread, int numParticles)
+void LoadClusterParticles(ParticleCpu* const pParticles, float_3 center, float_3 velocity, 
+    float spread, int numParticles)
 {
     std::random_device rd; 
     std::default_random_engine engine(rd()); 
