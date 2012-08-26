@@ -141,6 +141,8 @@ void TextureCopyExample()
 
     completion_future f = copy_async(text3, byteData.data(), dataSize);
     
+    // Do other work... 
+
     f.then([=](){ std::wcout << "Copy complete" << std::endl; });
 
     f.get();

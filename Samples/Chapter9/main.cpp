@@ -137,17 +137,19 @@ void EnumeratingAcceleratorsExample()
 
     accls = accelerator::get_all();
     bool hasWarp = std::find_if(accls.begin(), accls.end(), [=](accelerator& a) 
-        { return a.device_path.compare(accelerator::direct3d_warp) == 0; }) != accls.end();
+        { 
+            return a.device_path.compare(accelerator::direct3d_warp) == 0; 
+        }) != accls.end();
     std::wcout << "Has WARP accelerator: " << (hasWarp ? "true" : "false") << std::endl;
 
     //  Look for accelerators with specific properties; 1MB memory and connected to a display
 
     std::wcout << std::endl << "Looking for accelerator with display and 1MB of dedicated memory..." << std::endl;
     bool found = std::find_if(accls.begin(), accls.end(), [=](accelerator& a) 
-    { 
-        return !a.is_emulated && a.dedicated_memory >= 2048 && 
-            a.supports_limited_double_precision && a.has_display; 
-    }) != accls.end();
+        { 
+            return !a.is_emulated && a.dedicated_memory >= 2048 && 
+                a.supports_limited_double_precision && a.has_display; 
+        }) != accls.end();
     std::wcout << "  Suitable accelerator " << (found ? "found." : "not found.") << std::endl;
 
     //  Look for an accelerator with specific properties and set it as the default
@@ -416,7 +418,7 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
             //  Swap edges
 
             std::vector<completion_future> copyResults((tasks.size() - 1) * 2);
-            parallel_for(0u, (tasks.size() - 1), [=, &arrCs, &copyResults](size_t i)
+            parallel_for(0, int(tasks.size() - 1), [=, &arrCs, &copyResults](size_t i)
             {
                 array_view<float, 2> topEdge = 
                     arrCs[i].section(index<2>(tasks[i].writeOffset + tasks[i].writeExt[0] - shift, 0), 
@@ -427,9 +429,9 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
                 copyResults[i + 1] = copy_async(bottomEdge, swapViewBottom);
             });
 
-            parallel_for_each(copyResults.begin(), copyResults.end(), [=](completion_future& f) { f.wait(); });
+            parallel_for_each(copyResults.begin(), copyResults.end(), [=](completion_future& f) { f.get(); });
 
-            parallel_for(0u, (tasks.size() - 1), [=, &arrCs, &copyResults](size_t i)
+            parallel_for(0, int(tasks.size() - 1), [=, &arrCs, &copyResults](size_t i)
             {
                 array_view<float, 2> topEdge = 
                     arrCs[i].section(index<2>(tasks[i].writeOffset + tasks[i].writeExt[0] - shift, 0), 
@@ -439,7 +441,7 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
                 copyResults[i + 1] = copy_async(swapViewBottom, topEdge);
             });
 
-            parallel_for_each(copyResults.begin(), copyResults.end(), [=](completion_future& f) { f.wait(); });
+            parallel_for_each(copyResults.begin(), copyResults.end(), [=](completion_future& f) { f.get(); });
 
             // Sequential version of the above swapping code. This may lead to contention on
             // Windows 7 due to blocking copy operations.

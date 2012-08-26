@@ -55,14 +55,14 @@ public:
         assert(particleData.size() > 1);
 
         const int tileSize = m_engine.TileSize();
-        const size_t numAccs = particleData.size();
+        const int numAccs = int(particleData.size());
         const int rangeSize = ((numParticles / tileSize) / int(numAccs)) * tileSize;
         std::vector<completion_future> copyResults(2 * numAccs);
 
         // Update range of particles on each accelerator using the same tiled implementation as NBodyAmpTiled
         // Copy the results back to the CPU so they can be swapped with other GPUs.
 
-        parallel_for(0u, numAccs, [=, this, &copyResults](int i)
+        parallel_for(0, numAccs, [=, this, &copyResults](int i)
         {
             const int rangeStart = static_cast<int>(i) * rangeSize;
             m_engine.TiledBodyBodyInteraction((*particleData[i]->DataOld), (*particleData[i]->DataNew), rangeStart, rangeSize, numParticles);
@@ -79,7 +79,7 @@ public:
 
         // TODO_AMP: Is this really the case? Try re-writing to only copy the required data and see if this is faster.
 
-        parallel_for(0u, numAccs, [=, this, &copyResults] (int i)
+        parallel_for(0, numAccs, [=, this, &copyResults] (int i)
         {
             copyResults[i] = copy_async(m_hostPos.begin(), particleData[i]->DataNew->pos);
             copyResults[i + numAccs] = copy_async(m_hostVel.begin(), particleData[i]->DataNew->vel);

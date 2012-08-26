@@ -142,7 +142,7 @@ public:
                     //  Because TileSize is a template parameter the if statements referencing it are evaluated at compile time.
                     //
                     //  HOWEVER! This code is now warp size aware! This means that it may not behave as expected on hardware with a 
-                    //  warp size that is not 32. Warp (NVIDIA) or wavefront (AMD) sizes can vary between 32 and 64 depending on the 
+                    //  warp size that is smaller than 32. Warp (NVIDIA) or wavefront (AMD) sizes can vary between 32 and 64 depending on the 
                     //  hardware being used. 
 
                     //  For the same reason this does not work on the REF or WARP accelerators because they have no notion of a warp.
