@@ -24,19 +24,23 @@
 #include <numeric>
 #include <amp_graphics.h>
 
+#include <d3d11.h>
+#include <D3Dcommon.h>
+
 #include "Timer.h"
 
 using namespace concurrency;
-
-void FillExample();
-void AtomicExample();
-void TdrExample();
 
 void TransposeExample(int matrixSize);
 void TransposeSimpleExample(int matrixSize);
 void TransposePaddedExample(int matrixSize);
 void TransposeTruncatedMarginThreadsExample(int matrixSize);
 void TransPoseTruncatedSectionsExample(int matrixSize);
+
+void FillExample();
+void FunctorExample();
+void AtomicExample();
+void TdrExample();
 
 //--------------------------------------------------------------------------------------
 //  Print a subsection of a matrix. 
@@ -94,10 +98,6 @@ int main()
             "To see better performance run on C++ AMP\ncapable hardware." << std::endl;
 #endif
 
-    FillExample();
-
-    AtomicExample();
-
     // TODO_AMP: Reinstate this when the driver bug is fixed.
     //TdrExample();
 
@@ -126,107 +126,11 @@ int main()
     TransPoseTruncatedSectionsExample(size + tileSize - 1);
 
     std::wcout << std::endl << std::endl;
-}
 
-//--------------------------------------------------------------------------------------
-//  Fill example.
-//--------------------------------------------------------------------------------------
+    FillExample();
 
-template<typename T, int Rank>
-void Fill(array<T, Rank>& arr, T value) 
-{ 
-    parallel_for_each(arr.extent, [&arr, value](index<Rank> idx) restrict(amp)
-    {
-        arr[idx] = value; 
-    }); 
-}
-
-void FillExample()
-{
-    array<float, 2> theData(100, 100);
-    Fill(theData, 1.5f);
-}
-
-//--------------------------------------------------------------------------------------
-//  Atomic example.
-//--------------------------------------------------------------------------------------
-
-void AtomicExample()
-{
-    std::random_device rd; 
-    std::default_random_engine engine(rd()); 
-    std::uniform_real_distribution<float> randDist(0.0f, 1.0f);
-    std::vector<float> theData(100000);
-    std::generate(theData.begin(), theData.end(), [=, &engine, &randDist]() { return randDist(engine); });
-    array_view<float, 1> theDataView(int(theData.size()), theData);
-
-    int exceptionalOccurrences = 0;
-    array_view<int> count(1, &exceptionalOccurrences);
-    parallel_for_each(theDataView.extent, [=] (index<1> idx) restrict(amp)
-    {
-        if (theDataView[idx] >= 0.9999f)  // Exceptional occurence.
-        {
-            atomic_fetch_inc(&count(0));
-        }
-        theDataView[idx] = fast_math::sqrt(theDataView[idx]);
-    });
-    count.synchronize();
-    std::wcout << "Calculating values for " << theData.size() << " elements " << std::endl;
-    std::wcout << "A total of " << exceptionalOccurrences << " exceptional occurrences were detected." 
-        << std::endl << std::endl;
-}
-
-//--------------------------------------------------------------------------------------
-//  TDR example.
-//--------------------------------------------------------------------------------------
-
-void Compute(std::vector<float>& inData, std::vector<float>& outData, int start, 
-             accelerator& device, queuing_mode mode = queuing_mode::queuing_mode_automatic)
-{
-    array_view<const float, 1> inDataView(int(inData.size()), inData);
-    array_view<float, 1> outDataView(int(outData.size()), outData);
-
-    accelerator_view view = device.create_view(mode);
-    parallel_for_each(view, outDataView.extent, [=](index<1> idx) restrict(amp)
-    {
-        int i = start;
-        while (i < 1024)
-        {
-            outDataView[idx] = inDataView[idx];
-            i *= 2;
-            i = i % 2048;
-        }
-    }); 
-}
-
-void TdrExample()
-{
-    std::vector<float> inData(10000);
-    std::vector<float> outData(10000, 0.0f);
-    accelerator accel = accelerator();
-    try
-    {
-        Compute(inData, outData, -1, accel);
-    }
-    catch (accelerator_view_removed& ex)
-    {
-        std::wcout << "TDR exception: " << ex.what(); 
-        std::wcout << "  Error code:" << std::hex << ex.get_error_code(); 
-        std::wcout << "  Reason:" << std::hex << ex.get_view_removed_reason();
-
-        std::wcout << "Retrying..." << std::endl;
-        try
-        {
-            Compute(inData, outData, 1, accel, queuing_mode::queuing_mode_immediate);
-        }
-        catch (accelerator_view_removed& ex)
-        {
-            std::wcout << "TDR exception: " << ex.what(); 
-            std::wcout << "  Error code:" << std::hex << ex.get_error_code(); 
-            std::wcout << "  Reason:" << std::hex << ex.get_view_removed_reason();
-            std::wcout << "FAILED." << std::endl;
-        }
-    }
+    FunctorExample();
+    AtomicExample();
 }
 
 //--------------------------------------------------------------------------------------
@@ -304,6 +208,7 @@ void TransposeExample(int matrixSize)
     PrintMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     std::wcout << std::endl;
 }
+
 //--------------------------------------------------------------------------------------
 //  Tiled and padded matrix transpose example.
 //--------------------------------------------------------------------------------------
@@ -477,7 +382,7 @@ void TransPoseTruncatedSectionsExample(int matrixSize)
         array_view<unsigned int, 2> toData = outDataView.section(index<2>(0, 0), extent<2>(truncatedDomain[1], truncatedDomain[0]));
         TiledTranspose<tileSize>(fromData, toData);
 
-        if (isBottomTruncated)                  // Areas B.
+        if (isBottomTruncated)                  // Area B.
         {
             index<2> offset(truncatedDomain[0], 0);
             extent<2> ext(inDataView.extent[0] - truncatedDomain[0], truncatedDomain[1]);
@@ -485,7 +390,7 @@ void TransPoseTruncatedSectionsExample(int matrixSize)
             toData = outDataView.section(index<2>(offset[1], offset[0]), extent<2>(ext[1], ext[0]));
             SimpleTranspose(fromData, toData);
         }
-        if (isRightTruncated)                  // Area A & C.
+        if (isRightTruncated)                   // Area A & C.
         {
             index<2> offset(0, truncatedDomain[1]);
             fromData  = inDataView.section(offset);
@@ -503,4 +408,187 @@ void TransPoseTruncatedSectionsExample(int matrixSize)
     CheckMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     PrintMatrix(static_cast<const unsigned int* const>(outData.data()), matrixSize);
     std::wcout << std::endl;
+}
+
+//--------------------------------------------------------------------------------------
+//  Fill example.
+//--------------------------------------------------------------------------------------
+
+template<typename T, int Rank>
+void Fill(array<T, Rank>& arr, T value) 
+{ 
+    parallel_for_each(arr.extent, [&arr, value](index<Rank> idx) restrict(amp)
+    {
+        arr[idx] = value; 
+    }); 
+}
+
+void FillExample()
+{
+    array<float, 2> theData(100, 100);
+    Fill(theData, 1.5f);
+}
+
+//--------------------------------------------------------------------------------------
+//  GPU simple matrix multiply functor
+//--------------------------------------------------------------------------------------
+
+class Multiply
+{
+private:
+    array_view<const float, 2> m_mA; 
+    array_view<const float, 2> m_mB; 
+    array_view<float, 2> m_mC;
+    int m_W;
+
+public:
+    Multiply(const array_view<const float, 2>& a,
+             const array_view<const float, 2>& b,
+             const array_view<float, 2>& c,
+             int w) : m_mA(a), m_mB(b), m_mC(c), m_W(w)
+    {}
+
+    void operator()(index<2> idx) const restrict(amp)
+    {
+        int row = idx[0]; int col = idx[1];
+        float sum = 0.0f;
+        for(int i = 0; i < m_W; i++)
+            sum += m_mA(row, i) * m_mB(i, col);
+        m_mC[idx] = sum;
+    }
+};
+
+void FunctorExample()
+{
+    const int M = 64;
+    const int N = 512;
+    const int W = 256;
+
+    std::vector<float> vA(M * W);
+    std::vector<float> vB(W * N);
+    std::vector<float> vC(M * N);
+
+    extent<2> eA(M, W), eB(W, N), eC(M, N);
+    array_view<float, 2> mA(eA, vA); 
+    array_view<float, 2> mB(eB, vB); 
+    array_view<float, 2> mC(eC, vC);
+    mC.discard_data();
+
+    parallel_for_each(extent<2>(eC), Multiply(mA, mB, mC, W));
+
+    mC.synchronize();
+}
+
+//--------------------------------------------------------------------------------------
+//  Atomic example.
+//--------------------------------------------------------------------------------------
+
+void AtomicExample()
+{
+    std::random_device rd; 
+    std::default_random_engine engine(rd()); 
+    std::uniform_real_distribution<float> randDist(0.0f, 1.0f);
+    std::vector<float> theData(100000);
+    std::generate(theData.begin(), theData.end(), [=, &engine, &randDist]() { return randDist(engine); });
+    array_view<float, 1> theDataView(int(theData.size()), theData);
+
+    int exceptionalOccurrences = 0;
+    array_view<int> count(1, &exceptionalOccurrences);
+    parallel_for_each(theDataView.extent, [=] (index<1> idx) restrict(amp)
+    {
+        if (theDataView[idx] >= 0.9999f)  // Exceptional occurence.
+        {
+            atomic_fetch_inc(&count(0));
+        }
+        theDataView[idx] = fast_math::sqrt(theDataView[idx]);
+    });
+    count.synchronize();
+    std::wcout << "Calculating values for " << theData.size() << " elements " << std::endl;
+    std::wcout << "A total of " << exceptionalOccurrences << " exceptional occurrences were detected." 
+        << std::endl << std::endl;
+}
+
+//--------------------------------------------------------------------------------------
+//  TDR example.
+//--------------------------------------------------------------------------------------
+
+//  Only available on Windows 8.
+
+void DisableTdrExample()
+{
+#if defined(D3D_FEATURE_LEVEL_11_1)
+    IDXGIAdapter* pAdapter = nullptr; // Use default adapter
+    unsigned int createDeviceFlags = D3D11_CREATE_DEVICE_DISABLE_GPU_TIMEOUT;
+    ID3D11Device *pDevice = nullptr;
+    ID3D11DeviceContext *pContext = nullptr;
+    D3D_FEATURE_LEVEL featureLevel;
+    HRESULT hr = D3D11CreateDevice(pAdapter,
+        D3D_DRIVER_TYPE_UNKNOWN,
+        NULL,
+        createDeviceFlags,
+        NULL,
+        0,
+        D3D11_SDK_VERSION,
+        &pDevice,
+        &featureLevel,
+        &pContext);
+    if (FAILED(hr) ||
+        ((featureLevel != D3D_FEATURE_LEVEL_11_1) &&
+         (featureLevel != D3D_FEATURE_LEVEL_11_0)))
+    {
+        std::wcerr << "Failed to create Direct3D 11 device" << std::endl;
+        return;
+    }
+    accelerator_view noTimeoutAcclView =
+    concurrency::direct3d::create_accelerator_view(pDevice);
+#endif
+}
+
+void Compute(std::vector<float>& inData, std::vector<float>& outData, int start, 
+             accelerator& device, queuing_mode mode = queuing_mode::queuing_mode_automatic)
+{
+    array_view<const float, 1> inDataView(int(inData.size()), inData);
+    array_view<float, 1> outDataView(int(outData.size()), outData);
+
+    accelerator_view view = device.create_view(mode);
+    parallel_for_each(view, outDataView.extent, [=](index<1> idx) restrict(amp)
+    {
+        int i = start;
+        while (i < 1024)
+        {
+            outDataView[idx] = inDataView[idx];
+            i *= 2;
+            i = i % 2048;
+        }
+    }); 
+}
+
+void TdrExample()
+{
+    std::vector<float> inData(10000);
+    std::vector<float> outData(10000, 0.0f);
+    accelerator accel = accelerator();
+    try
+    {
+        Compute(inData, outData, -1, accel);
+    }
+    catch (accelerator_view_removed& ex)
+    {
+        std::wcout << "TDR exception: " << ex.what(); 
+        std::wcout << "  Error code:" << std::hex << ex.get_error_code(); 
+        std::wcout << "  Reason:" << std::hex << ex.get_view_removed_reason();
+
+        std::wcout << "Retrying..." << std::endl;
+        try
+        {
+            Compute(inData, outData, 1, accel, queuing_mode::queuing_mode_immediate);
+        }
+        catch (accelerator_view_removed& ex)
+        {
+            std::wcout << "TDR exception: " << ex.what(); 
+            std::wcout << "  Error code:" << std::hex << ex.get_error_code(); 
+            std::wcout << "  Reason:" << std::hex << ex.get_view_removed_reason();
+            std::wcout << "FAILED." << std::endl;
+        }
+    }
 }
