@@ -107,6 +107,7 @@
     <ClInclude Include="IFrameReader.h" />
     <ClInclude Include="IFrameProcessor.h" />
     <ClInclude Include="FrameProcessorFactory.h" />
+    <ClInclude Include="FrameProcessorAmpBase.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImageInfo.cpp">

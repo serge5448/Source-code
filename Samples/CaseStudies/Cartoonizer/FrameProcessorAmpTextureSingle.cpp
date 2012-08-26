@@ -42,8 +42,7 @@ void CalculateSobel(const texture<uint_4, 2>& source, index<2> idx, float& dy, f
 //--------------------------------------------------------------------------------------
 
 void FrameProcessorAmpTextureSingle::ProcessImage(const Gdiplus::BitmapData& srcFrame, 
-    Gdiplus::BitmapData& destFrame, 
-    UINT phases, UINT simplifierNeighborWindow)
+    Gdiplus::BitmapData& destFrame, UINT phases, UINT simplifierNeighborWindow)
 {
     assert(simplifierNeighborWindow % 2 == 0);
     assert(phases > 0);

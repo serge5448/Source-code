@@ -38,7 +38,8 @@ class FrameProcessorCpuSingle : public FrameProcessorCpuBase, public IFrameProce
         for (UINT i = 0; i < phases; ++i)
         {
             ApplyColorSimplifierSingle(*m_frames[current].get(), *m_frames[next].get(), 
-                neighborWindow, shift, shift, (srcFrame.Width - shift), (srcFrame.Height - shift));
+                neighborWindow, shift, shift, (srcFrame.Width - shift), 
+                (srcFrame.Height - shift));
             std::swap(current, next);
         }
 

@@ -245,6 +245,7 @@
     <ClInclude Include="AmpUtilities.h" />
     <ClInclude Include="CartoonizerFactory.h" />
     <ClInclude Include="FrameProcessorAmp.h" />
+    <ClInclude Include="FrameProcessorAmpBase.h" />
     <ClInclude Include="FrameProcessorAmpMulti.h" />
     <ClInclude Include="FrameProcessorAmpSingle.h" />
     <ClInclude Include="FrameProcessorAmpTextureSingle.h" />
