@@ -9,7 +9,7 @@ Global
 		SccLocalPath1 = .
 		SccNumberOfProjects = 2
 		SccProjectUniqueName1 = Reduction.vcxproj
-		SccTeamFoundationServer = https://gregcons.tfspreview.com/defaultcollection
+		SccTeamFoundationServer = https://tfs.codeplex.com/tfs/tfs01
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32

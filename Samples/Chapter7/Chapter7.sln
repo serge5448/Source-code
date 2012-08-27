@@ -5,14 +5,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Chapter7", "Chapter7.vcxpro
 EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccAuxPath0 = https://gregcons.tfspreview.com/defaultcollection
+		SccAuxPath0 = https://tfs.codeplex.com/tfs/tfs01
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccLocalPath0 = .
 		SccNumberOfProjects = 1
 		SccProjectName0 = .
 		SccProjectUniqueName0 = Chapter7.vcxproj
 		SccProvider0 = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = https://gregcons.tfspreview.com/defaultcollection
+		SccTeamFoundationServer = https://tfs.codeplex.com/tfs/tfs01
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
