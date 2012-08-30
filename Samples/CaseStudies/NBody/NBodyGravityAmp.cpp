@@ -266,7 +266,8 @@ void InitApp()
             processorNames[i].replace(24, 2, buf);
     std::wstring path = accelerator(accelerator::default_accelerator).device_path;
 
-    //  If there is a GPU accelerator then use it. Otherwise add a REF accelerator and display warning.
+    //  If there is a GPU accelerator then use it. 
+    //  Otherwise add a REF accelerator and display warning.
 
     for (int i = kSingleSimple; i <= kSingleTile512; ++i)
         pComboBox->AddItem(processorNames[i].c_str(), nullptr);
@@ -336,7 +337,8 @@ HRESULT CreateParticleBuffer( ID3D11Device* pd3dDevice )
     std::for_each(vertices.begin(), vertices.end(), [](ParticleVertex& v){ v.color = D3DXCOLOR( 1, 1, 0.2f, 1 ); });
 
     resourceData.pSysMem = &vertices[0];
-    V_RETURN( pd3dDevice->CreateBuffer( &bufferDesc, &resourceData, &g_pParticleBuffer.p ) );
+    g_pParticleBuffer = nullptr;
+    V_RETURN( pd3dDevice->CreateBuffer( &bufferDesc, &resourceData, &g_pParticleBuffer ) );
 
     return hr;
 }
@@ -436,16 +438,15 @@ std::shared_ptr<INBodyAmp> NBodyFactory(ComputeType type)
 HRESULT CreateParticlePosBuffer(ID3D11Device* pd3dDevice)
 {
     HRESULT hr = S_OK;   
-
     accelerator_view renderView = 
         concurrency::direct3d::create_accelerator_view(reinterpret_cast<IUnknown*>(pd3dDevice));
     g_deviceData = CreateTasks(g_maxParticles, renderView);
-
     LoadParticles();
 
+    g_pParticlePosOld = nullptr;
+    g_pParticlePosNew = nullptr;
     //  Particles from GPU zero are the ones synced with the graphics buffers. 
     //  Attach AMP array of positions to D3D buffer.
-
     hr = concurrency::direct3d::get_buffer(
         g_deviceData[0]->DataOld->pos)->QueryInterface(__uuidof(ID3D11Buffer), 
         reinterpret_cast<LPVOID*>(&g_pParticlePosOld));     
@@ -461,11 +462,15 @@ HRESULT CreateParticlePosBuffer(ID3D11Device* pd3dDevice)
     resourceDesc.BufferEx.FirstElement = 0;
     resourceDesc.BufferEx.NumElements = (g_maxParticles * sizeof(float_3)) / sizeof(float);
     resourceDesc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+    g_pParticlePosRvOld = nullptr;
+    g_pParticlePosRvNew = nullptr;
     hr = pd3dDevice->CreateShaderResourceView(g_pParticlePosOld, &resourceDesc, &g_pParticlePosRvOld);
     V_RETURN(hr);
     hr = pd3dDevice->CreateShaderResourceView(g_pParticlePosNew, &resourceDesc, &g_pParticlePosRvNew);
     V_RETURN(hr);
 
+    g_pParticlePosUavOld = nullptr;
+    g_pParticlePosUavNew = nullptr;
     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDesc;
     ZeroMemory(&viewDesc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
     viewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
@@ -519,7 +524,6 @@ bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, void* p
 void CALLBACK OnFrameMove(double fTime, float fElapsedTime, void* pUserContext)
 {
     g_pNBody->Integrate(g_deviceData, g_numParticles);
-
     std::for_each(g_deviceData.begin(), g_deviceData.end(), [](std::shared_ptr<TaskData>& t) 
     { 
         std::swap(t->DataOld, t->DataNew); 
@@ -665,26 +669,29 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
     CComPtr<ID3DBlob> pBlobRenderParticlesPS;
 
     // Create the shaders
-    V_RETURN( CompileShaderFromFile( L"ParticleDrawGpu.hlsl", "VSParticleDraw", "vs_4_0", &pBlobRenderParticlesVS.p ) );
-    V_RETURN( CompileShaderFromFile( L"ParticleDrawGpu.hlsl", "GSParticleDraw", "gs_4_0", &pBlobRenderParticlesGS.p ) );
-    V_RETURN( CompileShaderFromFile( L"ParticleDrawGpu.hlsl", "PSParticleDraw", "ps_4_0", &pBlobRenderParticlesPS.p ) );
-
-    V_RETURN( pd3dDevice->CreateVertexShader( pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), nullptr, &g_pRenderParticlesVS.p ) );
-    V_RETURN( pd3dDevice->CreateGeometryShader( pBlobRenderParticlesGS->GetBufferPointer(), pBlobRenderParticlesGS->GetBufferSize(), nullptr, &g_pRenderParticlesGS.p ) );
-    V_RETURN( pd3dDevice->CreatePixelShader( pBlobRenderParticlesPS->GetBufferPointer(), pBlobRenderParticlesPS->GetBufferSize(), nullptr, &g_pRenderParticlesPS.p ) );
+    V_RETURN( CompileShaderFromFile( L"ParticleDrawGpu.hlsl", "VSParticleDraw", "vs_4_0", &pBlobRenderParticlesVS) );
+    V_RETURN( CompileShaderFromFile( L"ParticleDrawGpu.hlsl", "GSParticleDraw", "gs_4_0", &pBlobRenderParticlesGS) );
+    V_RETURN( CompileShaderFromFile( L"ParticleDrawGpu.hlsl", "PSParticleDraw", "ps_4_0", &pBlobRenderParticlesPS) );
+    g_pRenderParticlesVS = nullptr;
+    g_pRenderParticlesGS = nullptr;
+    g_pRenderParticlesPS = nullptr;
+    V_RETURN( pd3dDevice->CreateVertexShader( pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), nullptr, &g_pRenderParticlesVS ) );
+    V_RETURN( pd3dDevice->CreateGeometryShader( pBlobRenderParticlesGS->GetBufferPointer(), pBlobRenderParticlesGS->GetBufferSize(), nullptr, &g_pRenderParticlesGS ) );
+    V_RETURN( pd3dDevice->CreatePixelShader( pBlobRenderParticlesPS->GetBufferPointer(), pBlobRenderParticlesPS->GetBufferSize(), nullptr, &g_pRenderParticlesPS ) );
 
     // Create our vertex input layout
     const D3D11_INPUT_ELEMENT_DESC layout[] =
     {
         { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
+    g_pParticleVertexLayout = nullptr;
     V_RETURN( pd3dDevice->CreateInputLayout( layout, sizeof( layout ) / sizeof( layout[0] ),
-        pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), &g_pParticleVertexLayout.p ) );
+        pBlobRenderParticlesVS->GetBufferPointer(), pBlobRenderParticlesVS->GetBufferSize(), &g_pParticleVertexLayout ) );
 
     // Create NBody object
     g_pNBody = NBodyFactory(g_eComputeType);
-    V_RETURN( CreateParticleBuffer( pd3dDevice ) );
-    V_RETURN( CreateParticlePosBuffer(pd3dDevice) );
+    V_RETURN(CreateParticleBuffer(pd3dDevice));
+    V_RETURN(CreateParticlePosBuffer(pd3dDevice));
 
     // Setup constant buffer
     D3D11_BUFFER_DESC bufferDesc;
@@ -693,12 +700,14 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
     bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     bufferDesc.MiscFlags = 0;
     bufferDesc.ByteWidth = sizeof( ResourceData );
-    V_RETURN( pd3dDevice->CreateBuffer( &bufferDesc, nullptr, &g_pConstantBuffer ) );
+    g_pConstantBuffer = nullptr;
+    V_RETURN( pd3dDevice->CreateBuffer(&bufferDesc, nullptr, &g_pConstantBuffer));
 
     // Load the Particle Texture
     WCHAR str[MAX_PATH];
     V_RETURN( DXUTFindDXSDKMediaFileCch( str, MAX_PATH, L"UI\\Particle.dds" ) );
-    V_RETURN( D3DX11CreateShaderResourceViewFromFile( pd3dDevice, str, nullptr, nullptr, &g_pShaderResView.p, nullptr ) );
+    g_pShaderResView = nullptr;
+    V_RETURN( D3DX11CreateShaderResourceViewFromFile( pd3dDevice, str, nullptr, nullptr, &g_pShaderResView, nullptr ) );
 
     D3D11_SAMPLER_DESC samplerDesc;
     ZeroMemory( &samplerDesc, sizeof(samplerDesc) );
@@ -706,7 +715,8 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
     samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
     samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
     samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-    V_RETURN( pd3dDevice->CreateSamplerState( &samplerDesc, &g_pSampleStateLinear ) );
+    g_pSampleStateLinear = nullptr;
+    V_RETURN(pd3dDevice->CreateSamplerState(&samplerDesc, &g_pSampleStateLinear));
 
     D3D11_BLEND_DESC blendStateDesc;
     ZeroMemory( &blendStateDesc, sizeof(blendStateDesc) );
@@ -718,13 +728,15 @@ HRESULT CALLBACK OnD3D11CreateDevice(ID3D11Device* pd3dDevice, const DXGI_SURFAC
     blendStateDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
     blendStateDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
     blendStateDesc.RenderTarget[0].RenderTargetWriteMask = 0x0F;
-    V_RETURN( pd3dDevice->CreateBlendState( &blendStateDesc, &g_pBlendingStateParticle ) );
+    g_pBlendingStateParticle = nullptr;
+    V_RETURN(pd3dDevice->CreateBlendState( &blendStateDesc, &g_pBlendingStateParticle));
 
     D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
     ZeroMemory( &depthStencilDesc, sizeof(depthStencilDesc) );
     depthStencilDesc.DepthEnable = false;
     depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    pd3dDevice->CreateDepthStencilState( &depthStencilDesc, &g_pDepthStencilState );
+    g_pDepthStencilState = nullptr;
+    pd3dDevice->CreateDepthStencilState(&depthStencilDesc, &g_pDepthStencilState);
 
     // Setup the camera's view parameters
     D3DXVECTOR3 vecEye( -g_Spread * 2, g_Spread * 4, -g_Spread * 3 );
@@ -820,10 +832,9 @@ bool RenderParticles(ID3D11DeviceContext* pd3dImmediateContext, D3DXMATRIX& view
     D3DXMatrixInverse( &pCBGS->inverseView, nullptr, &view );
     pCBGS->color = g_particleColor;
     pd3dImmediateContext->Unmap( g_pConstantBuffer, 0 );
-    pd3dImmediateContext->GSSetConstantBuffers( 0, 1, &g_pConstantBuffer.p );
-
-    pd3dImmediateContext->PSSetShaderResources( 0, 1, &g_pShaderResView.p );
-    pd3dImmediateContext->PSSetSamplers( 0, 1, &g_pSampleStateLinear.p );
+    pd3dImmediateContext->GSSetConstantBuffers( 0, 1, &g_pConstantBuffer.p);
+    pd3dImmediateContext->PSSetShaderResources( 0, 1, &g_pShaderResView.p);
+    pd3dImmediateContext->PSSetSamplers( 0, 1, &g_pSampleStateLinear.p);
 
     pd3dImmediateContext->OMSetBlendState( g_pBlendingStateParticle, D3DXCOLOR( 0.0f, 0.0f, 0.0f, 0.0f ), 0xFFFFFFFF  );
     pd3dImmediateContext->OMSetDepthStencilState( g_pDepthStencilState, 0 );
