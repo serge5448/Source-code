@@ -52,7 +52,7 @@ inline ArgbPackedPixel PackPixel(const RgbPixel& rgb) restrict(amp)
 inline RgbPixel UnpackPixel(const ArgbPackedPixel& packedArgb) restrict(amp) 
 {
     RgbPixel rgb;
-    rgb.b = packedArgb & fixedAlpha;
+    rgb.b = packedArgb & 0xFF;
     rgb.g = (packedArgb & 0xFF00) >> 8;
     rgb.r = (packedArgb & 0xFF0000) >> 16;
     return rgb;

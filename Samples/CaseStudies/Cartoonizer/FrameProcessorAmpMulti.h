@@ -140,13 +140,19 @@ private:
     {
         const UINT topHeight = top->extent[0];
         std::array<completion_future, 2> copyResults;
-        copyResults[0] = copy_async(top->section(topHeight - borderHeight * 2, 0, borderHeight, m_width), m_swapViewTop); 
-        copyResults[1] = copy_async(bottom->section(borderHeight, 0, borderHeight, m_width), m_swapViewBottom);
-        parallel_for_each(copyResults.begin(), copyResults.end(), [](completion_future& f){ f.get(); });
+        copyResults[0] = copy_async(top->section(topHeight - borderHeight * 2, 0, borderHeight, m_width), 
+            m_swapViewTop); 
+        copyResults[1] = copy_async(
+            bottom->section(borderHeight, 0, borderHeight, m_width), m_swapViewBottom);
+        parallel_for_each(copyResults.begin(), copyResults.end(), [](completion_future& f)
+            { f.get(); });
 
-        copyResults[0] = copy_async(m_swapViewTop, bottom->section(0, 0, borderHeight, m_width));
-        copyResults[1] = copy_async(m_swapViewBottom, top->section(topHeight - borderHeight, 0, borderHeight, m_width));
-        parallel_for_each(copyResults.begin(), copyResults.end(), [](completion_future& f){ f.get(); });
+        copyResults[0] = copy_async(m_swapViewTop, 
+            bottom->section(0, 0, borderHeight, m_width));
+        copyResults[1] = copy_async(m_swapViewBottom, 
+            top->section(topHeight - borderHeight, 0, borderHeight, m_width));
+        parallel_for_each(copyResults.begin(), copyResults.end(), [](completion_future& f)
+            { f.get(); });
     }
 
     void ConfigureFrameBuffers(std::vector<TaskData>& taskData, const Gdiplus::BitmapData& srcFrame, UINT neighborWindow)

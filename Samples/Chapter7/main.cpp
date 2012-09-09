@@ -541,7 +541,7 @@ void ApplyDivergentStencil(accelerator_view& view, const array<float, 2>& input,
 
 void ApplyImprovedStencil(accelerator_view& view, const array<float, 2>& input, array<float, 2>& output)
 {
-    extent<2> computeDomain(input.extent[0] - 2, input.extent[1] - 2);
+    extent<2> computeDomain(output.extent[0] - 2, output.extent[1] - 2);
     parallel_for_each(view, computeDomain, [&input, &output](index<2> idx) restrict(amp)
     {
         const index<2> idc = idx + index<2>(1, 1);
@@ -558,7 +558,7 @@ void ApplyImprovedStencil(accelerator_view& view, const array<float, 2>& input, 
 
 void ApplyImprovedStencilMask(accelerator_view& view, const array<float, 2>& input, array<float, 2>& output)
 {
-    extent<2> computeDomain(input.extent[0] - 2, input.extent[1] - 2);
+    extent<2> computeDomain(output.extent[0] - 2, output.extent[1] - 2);
     parallel_for_each(view, computeDomain, [&input, &output](index<2> idx) restrict(amp)
     {
         int mask[8][2] = { {-1, -1}, {-1, 0}, {-1, 1}, 
