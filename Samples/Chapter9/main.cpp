@@ -488,7 +488,7 @@ void LoopedMatrixMultiGpuExample(const std::vector<accelerator>& accls, const in
 void AsyncCopyExample()
 {
     std::vector<float> resultData(100000, 0.0f);
-    array<float, 1> resultArr(resultData.size());
+    array<float, 1> resultArr(int(resultData.size()));
 
     //  Synchronous version, may be performance impact when using multi-GPU on Windows 7.
 

@@ -1231,11 +1231,11 @@ HRESULT WINAPI DXUTTrace( const CHAR* strFile, DWORD dwLine, HRESULT hr,
 #define BUFFER_LEN	512
 	WCHAR *complete_msg = new WCHAR[BUFFER_LEN];
 	WCHAR *wc_strFile = NULL;
-	DWORD dwRes = ::MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED , strFile, strlen(strFile), NULL, 0);
+	DWORD dwRes = ::MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED , strFile, int(strlen(strFile)), NULL, 0);
 	if (dwRes != 0)
 	{
 		wc_strFile = new WCHAR[dwRes];
-		dwRes = ::MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED , strFile, strlen(strFile), wc_strFile, strlen(strFile));
+		dwRes = ::MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED , strFile, int(strlen(strFile)), wc_strFile, int(strlen(strFile)));
 		if (dwRes == 0)
 		{
 			delete [] wc_strFile;
