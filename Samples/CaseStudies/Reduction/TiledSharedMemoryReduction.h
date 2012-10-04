@@ -28,6 +28,12 @@
 #include "Timer.h"
 #include <vector>
 #include <amp.h>
+
+// System Requirements
+//
+// Visual Studio 2012, any edition (the Professional or Ultimate product is required
+// to walk through the profiling examples in chapters 7 and 8).
+
 #ifdef MARKERS
 #include <cvmarkersobj.h>
 #endif
