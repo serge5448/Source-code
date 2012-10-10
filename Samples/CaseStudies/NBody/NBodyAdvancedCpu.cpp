@@ -223,7 +223,7 @@ void NBodyAdvanced::InteractionCell(const size_t iBegin, const size_t iEnd, cons
 
 //  Get size of the L1 cache.
 //
-//  Assume that all L1 caches for each logical processor is the same size and return the first one.
+//  Assume that all L1 caches for each logical processor are the same size and return the first one.
 
 typedef BOOL (WINAPI* GetProcInfoFunc)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, DWORD*);
 
