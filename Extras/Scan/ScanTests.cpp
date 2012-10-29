@@ -1,29 +1,61 @@
 #include "stdafx.h"
 
-#include <CppUnitTest.h>
 #include "Scan.h"
+#include "Utilities.h"
 
-using namespace std;
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace Examples;
 
 namespace ScanTests
-{		
+{
+    std::wstring Msg(std::vector<int>& expected, std::vector<int>& actual)
+    {
+        std::wostringstream msg;
+        msg << ContainerWidth(5) << L"[" << expected << L"] != [" << actual << L"]" << std::endl;
+        return msg.str();
+    }
+
 	TEST_CLASS(ScanTests)
 	{
-
 	public:
-        TEST_METHOD(ScanTests_Sequential)
+        TEST_METHOD(ScanTests_Simple)
 		{
-            vector<int> input(5, 1);
-            vector<int> result(5);
-            vector<int> expected(5);
+            std::vector<int> input(8, 1);
+            std::vector<int> result(input.size());
+            std::vector<int> expected(input.size());
+            std::iota(begin(expected), end(expected), 1);
 
-            std::iota(expected.begin(), expected.end(), 1);
-
-            Scan(input.begin(), input.end(), result.begin());
+            Scan(begin(input), end(input), result.begin());
             
-            Assert::IsTrue(expected == result);
+            Assert::IsTrue(expected == result, Msg(expected, result).c_str());
+		}
+    };
+
+	TEST_CLASS(ScanAmpTests)
+	{
+	public:
+        TEST_METHOD(ScanAmpTests_Simple)
+		{
+            std::vector<int> input(8, 1);
+            std::vector<int> result(input.size());
+            std::vector<int> expected(input.size());
+            std::iota(begin(expected), end(expected), 1);
+
+            ScanAmp(begin(input), end(input), result.begin());
+            
+            Assert::IsTrue(expected == result, Msg(expected, result).c_str());
+		}
+
+		TEST_METHOD(ScanAmpTests_Large)
+		{
+            std::vector<int> input(2048, 1);
+            std::vector<int> result(input.size());
+            std::vector<int> expected(input.size());
+            std::iota(begin(expected), end(expected), 1);
+
+			ScanAmp(begin(input), end(input), result.begin());
+            
+            Assert::IsTrue(expected == result, Msg(expected, result).c_str());
 		}
 	};
 }
