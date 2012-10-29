@@ -4,11 +4,14 @@ namespace Examples
 {
     // CPU based implementation of scan
 
+    // TODO: Should we use exclusive or nonexclusive scan here?
     template <typename InIt, typename OutIt>
     void Scan(InIt first, InIt last, OutIt outFirst)
     {
         typedef InIt::value_type T;
+
         T sum = InIt::value_type(0);
+        // TODO: Rewrite this to be more like the AMP versions.
         transform(first, last, outFirst, [&sum](T i)->T { sum += i; return sum; });
     }
 
