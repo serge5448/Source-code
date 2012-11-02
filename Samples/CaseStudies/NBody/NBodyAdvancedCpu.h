@@ -33,7 +33,9 @@
 //  during the calculation to take advantage of the reciprocal nature of the force calculation
 //  where: F(a, b) = F(b, a).
 //  
-//  For further discussion see:
+//  This is not discussed in detail in the book but more detail can be found here: 
+//
+//  http://software.intel.com/en-us/articles/a-cute-technique-for-avoiding-certain-race-conditions
 //  http://software.intel.com/en-us/blogs/2010/07/01/n-bodies-a-parallel-tbb-solution-parallel-code-balanced-recursive-parallelism-with-parallel_invoke/
 //
 //  The SSE implementations also take advantage of the alignment of the __m128 data members to

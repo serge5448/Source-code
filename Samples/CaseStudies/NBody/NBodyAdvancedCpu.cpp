@@ -37,7 +37,10 @@ using namespace concurrency::graphics;
 //  Each function takes a list of particles and updates the block of particles between 
 //  [iBegin, iEnd) and [jBegin, jEnd). It stores the updated accelerations for each particle.
 //
-//  This method is called on ranges within the whole particle array.
+//  This is not discussed in detail in the book but more detail can be found here: 
+//
+//  http://software.intel.com/en-us/articles/a-cute-technique-for-avoiding-certain-race-conditions
+//  http://software.intel.com/en-us/blogs/2010/07/01/n-bodies-a-parallel-tbb-solution-parallel-code-balanced-recursive-parallelism-with-parallel_invoke/
 
 //  Select which interaction engine to use based on the available SSE support.
 
@@ -58,6 +61,8 @@ void NBodyAdvancedInteractionEngine::SelectCpuImplementation()
 
 void NBodyAdvancedInteractionEngine::BodyBodyInteraction(ParticleCpu* const pParticles, const size_t iBegin, const size_t iEnd, const size_t jBegin, const size_t jEnd) const
 {
+    // The inner loop is not parallelized because Integrate and InteractionList are already running on all cores.
+
     for (size_t i = iBegin; i < iEnd; ++i)
     {
         for (size_t j = jBegin; j < jEnd; ++j)
@@ -81,6 +86,8 @@ void NBodyAdvancedInteractionEngine::BodyBodyInteractionSSE(ParticleCpu* const p
     ParticleSSE* const pParticlesSSE = reinterpret_cast<ParticleSSE* const>(pParticles);
     const __m128 softeningSquared = _mm_load1_ps( &m_softeningSquared);
     const __m128 particleMass = _mm_load1_ps( &m_particleMass );
+
+    // The inner loop is not parallelized because Integrate and InteractionList are already running on all cores.
 
     for (size_t i = iBegin; i < iEnd; ++i)
     {
@@ -118,6 +125,8 @@ void NBodyAdvancedInteractionEngine::BodyBodyInteractionSSE4(ParticleCpu* const 
     ParticleSSE* const pParticlesSSE = reinterpret_cast<ParticleSSE* const>(pParticles);
     const __m128 softeningSquared = _mm_load1_ps( &m_softeningSquared);
     const __m128 particleMass = _mm_load1_ps( &m_particleMass );
+
+    // The inner loop is not parallelized because Integrate and InteractionList are already running on all cores.
 
     for (size_t i = iBegin; i < iEnd; ++i)
     {
@@ -166,7 +175,7 @@ void NBodyAdvanced::Integrate(ParticleCpu* const pParticles, ParticleCpu* const 
         b.vel += b.acc * m_deltaTime;
         b.vel *= m_dampingFactor;
         b.pos += b.vel * m_deltaTime;
-        // Reset acceleration values before starting next round.
+        // Reset acceleration values before starting next integration step.
         b.acc = 0.0f;
     });
 }
@@ -182,8 +191,8 @@ void NBodyAdvanced::InteractionList(const size_t begin, const size_t end) const
     if (width > m_tileSize)
     {
         const size_t middle = begin + (width / 2);
-        parallel_invoke([=, this] { InteractionList(begin, middle); },
-            [=, this] { InteractionList(middle, end); });
+        parallel_invoke([=] { InteractionList(begin, middle); },
+            [=] { InteractionList(middle, end); });
         InteractionCell(begin, middle, middle, end);
     }
     else if (width > 1)
@@ -206,10 +215,10 @@ void NBodyAdvanced::InteractionCell(const size_t iBegin, const size_t iEnd, cons
     {
         const size_t iMiddle = iBegin + (iWidth / 2);
         const size_t jMiddle = jBegin + (jWidth / 2);
-        parallel_invoke([=, this] { InteractionCell(iBegin, iMiddle, jBegin, jMiddle); },
-            [=, this] { InteractionCell(iMiddle, iEnd, jMiddle, jEnd); });
-        parallel_invoke([=, this] { InteractionCell(iBegin, iMiddle, jMiddle, jEnd); },
-            [=, this] { InteractionCell(iMiddle, iEnd, jBegin, jMiddle); });
+        parallel_invoke([=] { InteractionCell(iBegin, iMiddle, jBegin, jMiddle); },
+            [=] { InteractionCell(iMiddle, iEnd, jMiddle, jEnd); });
+        parallel_invoke([=] { InteractionCell(iBegin, iMiddle, jMiddle, jEnd); },
+            [=] { InteractionCell(iMiddle, iEnd, jBegin, jMiddle); });
     }
     else
     {

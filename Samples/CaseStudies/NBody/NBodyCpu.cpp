@@ -258,7 +258,7 @@ inline CpuSSE GetSSEType()
     int CpuInfo[4] = { -1 };
     __cpuid(CpuInfo, 1);
 
-    // Note: The book code contains typos the && operator is used instead of & and 
+    // Note: The book code contains typos, the && operator is used instead of & and 
     // CpuInfo is capitalized incorrectly. The code below is correct.
 
     if (CpuInfo[2] >> 19 & 0x1) return kCpuSSE4;
