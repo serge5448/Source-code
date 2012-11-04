@@ -3,7 +3,7 @@
 
 // Problem 1: Write a method to reverse an arbitrary string provided as a null terminated char*.
 
-namespace Examples
+namespace Extras
 {
     //  You can use this instead of std::swap(). It's ugly IMO but removes the temp
     //  used by std::swap() but doesn't support other types.

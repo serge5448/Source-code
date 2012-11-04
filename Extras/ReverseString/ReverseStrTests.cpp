@@ -4,7 +4,7 @@
 
 using namespace concurrency;
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-using namespace Examples;
+using namespace Extras;
 
 namespace ReverseStringTests
 {		

@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace Examples
+namespace Extras
 {
     void ReverseStr(char* const pStr);
     void ReverseStrAmp(char* const pStr);
