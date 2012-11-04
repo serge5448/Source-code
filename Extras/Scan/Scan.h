@@ -1,6 +1,11 @@
+#pragma once
+
+#include <amp.h>
+#include <assert.h>
+
 using namespace concurrency;
 
-namespace Examples
+namespace Extras
 {
 	// Exclusive scan, output element at i contains the sum of elements [0]...[i-1].
 
@@ -40,7 +45,7 @@ namespace Examples
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
         
-		ComputeScan(array_view<T, 1>(in), array_view<T, 1>(out));
+		ComputeScanAmp(array_view<T, 1>(in), array_view<T, 1>(out));
 
 		// Prescan is just an offset scan, so shift the results by one.
         copy(out.section(0, size - 1), outFirst + 1);
@@ -59,12 +64,12 @@ namespace Examples
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
         
-		ComputeScan(array_view<T, 1>(in), array_view<T, 1>(out));
+		ComputeScanAmp(array_view<T, 1>(in), array_view<T, 1>(out));
         copy(out, outFirst);
     }
 
 	template <typename T>
-	void ComputeScan(array_view<T, 1> input, array_view<T, 1> output)
+	void ComputeScanAmp(array_view<T, 1> input, array_view<T, 1> output)
 	{
 		assert(input.extent[0] == output.extent[0]);
         for (int offset = 1; offset < input.extent[0]; offset *= 2)

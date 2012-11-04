@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ReverseString", "ReverseString\ReverseString.vcxproj", "{EB8CEC9C-A987-4866-B0FF-D8EA80823523}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Scan", "Scan\Scan.vcxproj", "{1F21035B-E649-4992-A3C2-15D827B2CA9A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scan", "Scan", "{44E0734E-44DB-47DA-8302-2E9782AF29B8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScanTests", "Scan\ScanTests.vcxproj", "{1F21035B-E649-4992-A3C2-15D827B2CA9A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScanPerf", "ScanPerf\ScanPerf.vcxproj", "{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,8 +33,18 @@ Global
 		{1F21035B-E649-4992-A3C2-15D827B2CA9A}.Release|Win32.Build.0 = Release|Win32
 		{1F21035B-E649-4992-A3C2-15D827B2CA9A}.Release|x64.ActiveCfg = Release|x64
 		{1F21035B-E649-4992-A3C2-15D827B2CA9A}.Release|x64.Build.0 = Release|x64
+		{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}.Debug|Win32.Build.0 = Debug|Win32
+		{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}.Debug|x64.ActiveCfg = Debug|Win32
+		{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}.Release|Win32.ActiveCfg = Release|Win32
+		{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}.Release|Win32.Build.0 = Release|Win32
+		{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1F21035B-E649-4992-A3C2-15D827B2CA9A} = {44E0734E-44DB-47DA-8302-2E9782AF29B8}
+		{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6} = {44E0734E-44DB-47DA-8302-2E9782AF29B8}
 	EndGlobalSection
 EndGlobal

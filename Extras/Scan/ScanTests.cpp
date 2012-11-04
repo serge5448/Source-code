@@ -4,7 +4,7 @@
 #include "Utilities.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-using namespace Examples;
+using namespace Extras;
 
 namespace ScanTests
 {
