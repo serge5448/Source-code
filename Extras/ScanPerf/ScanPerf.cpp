@@ -25,7 +25,16 @@ class SimpleScan : public IScan
 public:
     void Scan(array_view<int, 1>(in), array_view<int, 1>(out)) const
     {
-		ComputeScanAmp(array_view<int, 1>(in), array_view<int, 1>(out));
+		ComputeScanAmpSimple(array_view<int, 1>(in), array_view<int, 1>(out));
+    }
+};
+
+class TiledScan : public IScan
+{
+public:
+    void Scan(array_view<int, 1>(in), array_view<int, 1>(out)) const
+    {
+		ComputeScanAmpTiled<16, int>(array_view<int, 1>(in), array_view<int, 1>(out));
     }
 };
 
@@ -33,9 +42,10 @@ typedef std::pair<std::shared_ptr<IScan>, std::wstring> ScanDescription;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	std::array<ScanDescription, 2> scans = {
+	std::array<ScanDescription, 3> scans = {
         ScanDescription(std::make_shared<DummyScan>(),    L"Overhead"),
-        ScanDescription(std::make_shared<SimpleScan>(),   L"Simple") };
+        ScanDescription(std::make_shared<SimpleScan>(),   L"Simple"),
+        ScanDescription(std::make_shared<TiledScan>(),    L"Tiled") };
 
     accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
 

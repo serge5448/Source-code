@@ -1,8 +1,8 @@
 #pragma once
 
-#include "targetver.h"
-
 #define NOMINMAX
+
+#include "targetver.h"
 
 #include <vector>
 #include <algorithm>
