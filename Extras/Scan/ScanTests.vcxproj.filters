@@ -29,6 +29,9 @@
     <ClInclude Include="ScanSimple.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ScanTiledOptimized.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

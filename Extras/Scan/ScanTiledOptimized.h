@@ -26,7 +26,7 @@ namespace Extras
     // Exclusive scan, output element at i contains the sum of elements [0]...[i-1].
 
     template <int TileSize, typename InIt, typename OutIt>
-    inline void PrescanAmpTiled(InIt first, InIt last, OutIt outFirst)
+    inline void PrescanAmpTiledOptimized(InIt first, InIt last, OutIt outFirst)
     {
         typedef InIt::value_type T;
 
@@ -45,7 +45,7 @@ namespace Extras
     // Inclusive scan, output element at i contains the sum of elements [0]...[i].
 
     template <int TileSize, typename InIt, typename OutIt>
-    inline void ScanAmpTiled(InIt first, InIt last, OutIt outFirst)
+    inline void ScanAmpTiledOptimized(InIt first, InIt last, OutIt outFirst)
     {
         typedef InIt::value_type T;
 
@@ -59,7 +59,7 @@ namespace Extras
     }
 
     template <int TileSize, typename T>
-    void ScanAmpTiled(array_view<T, 1> input, array_view<T, 1> output)
+    void ScanAmpTiledOptimized(array_view<T, 1> input, array_view<T, 1> output)
     {
         assert(input.extent[0] == output.extent[0]);
 
@@ -68,7 +68,7 @@ namespace Extras
 
         // Compute tile-wise scans and reductions
         array<T> tileSums(tileCount);
-        details::ComputeTilewiseScan<TileSize>(array_view<const T>(input), array_view<T>(output), array_view<T>(tileSums));
+        details::ComputeTilewiseScanOptimized<TileSize>(array_view<const T>(input), array_view<T>(output), array_view<T>(tileSums));
 
         // recurse if necessary
         if (tileCount >  1)
@@ -81,7 +81,7 @@ namespace Extras
             {
                 parallel_for_each(extent<1>(elementCount), [=, &tileSums] (concurrency::index<1> idx) restrict (amp) 
                 {
-                    int tileIdx = idx[0] / TileSize;
+                    const int tileIdx = idx[0] / TileSize;
                     if (tileIdx == 0)
                         output[idx] = output[idx];
                     else
@@ -96,12 +96,12 @@ namespace Extras
         // Calculate prefix sum for a tile
 
         template <int TileSize, typename T>
-        void ComputeTilewiseScan(array_view<const T> input, array_view<T> tilewiseOutput, array_view<T> tileSums)
+        void ComputeTilewiseScanOptimized(array_view<const T> input, array_view<T> tilewiseOutput, array_view<T> tileSums)
         {
             const int elementCount = input.extent[0];
             const int tileCount = (elementCount + TileSize - 1) / TileSize;
             const int threadCount = tileCount * TileSize;
-
+    
             parallel_for_each(extent<1>(threadCount).tile<TileSize>(), [=](tiled_index<TileSize> tidx) restrict(amp) 
             {
                 const int tid = tidx.local[0];
@@ -110,11 +110,17 @@ namespace Extras
                 tile_static T tile[2][TileSize];
                 int inIdx = 0;
                 int outIdx = 1;
+                // Do the first pass (offset = 1) when loading elements into tile_static memory.
                 if (globid < elementCount)
-                    tile[outIdx][tid] = input[globid];
+                {
+                    if (tid >= 1)
+                        tile[outIdx][tid] = input[globid - 1] + input[globid];
+                    else 
+                        tile[outIdx][tid] = input[globid];
+                }
                 tidx.barrier.wait();
 
-                for (int offset = 1; offset < TileSize; offset *= 2)
+                for (int offset = 2; offset < TileSize; offset *= 2)
                 {
                     Switch(inIdx, outIdx);
 
@@ -133,12 +139,6 @@ namespace Extras
                 if (tid == TileSize - 1)
                     tileSums[tidx.tile[0]] = tile[outIdx][tid];
             });
-        }
-
-        void Switch(int& index1, int& index2) restrict(amp, cpu)
-        {
-            index1 = 1 - index1;
-            index2 = 1 - index2;
         }
     }
 }

@@ -18,6 +18,7 @@
 
 #include "..\Scan\ScanSimple.h"
 #include "..\Scan\ScanTiled.h"
+#include "..\Scan\ScanTiledOptimized.h"
 
 using namespace Extras;
 
@@ -51,18 +52,28 @@ public:
     }
 };
 
+class TiledOptScan : public IScan
+{
+public:
+    void Scan(array_view<int, 1>(in), array_view<int, 1>(out)) const
+    {
+        ScanAmpTiledOptimized<256>(array_view<int, 1>(in), array_view<int, 1>(out));
+    }
+};
+
 typedef std::pair<std::shared_ptr<IScan>, std::wstring> ScanDescription;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-    std::array<ScanDescription, 3> scans = {
-        ScanDescription(std::make_shared<DummyScan>(),    L"Overhead"),
-        ScanDescription(std::make_shared<SimpleScan>(),   L"Simple"),
-        ScanDescription(std::make_shared<TiledScan>(),    L"Tiled") };
+    std::array<ScanDescription, 4> scans = {
+        ScanDescription(std::make_shared<DummyScan>(),          L"Overhead"),
+        ScanDescription(std::make_shared<SimpleScan>(),         L"Simple"),
+        ScanDescription(std::make_shared<TiledScan>(),          L"Tiled"),
+        ScanDescription(std::make_shared<TiledOptScan>(),       L"Tiled Optimized") };
 
     accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
 
-    const size_t elementCount = 4 * 1024 * 1024;
+    const size_t elementCount = 8 * 1024 * 1024;
 
     std::vector<int> input(elementCount, 1);
     std::vector<int> result(input.size());

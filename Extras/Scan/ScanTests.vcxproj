@@ -154,6 +154,7 @@
   <ItemGroup>
     <ClInclude Include="ScanSimple.h" />
     <ClInclude Include="ScanSequential.h" />
+    <ClInclude Include="ScanTiledOptimized.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="ScanTiled.h" />
