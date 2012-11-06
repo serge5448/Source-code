@@ -68,8 +68,7 @@ namespace Extras
 
         // Compute tile-wise scans and reductions
         array<T> tileSums(tileCount);
-        details::ComputeTilewiseScan<TileSize>(array_view<const T>(input), array_view<T>(output), 
-            array_view<T>(tileSums));
+        details::ComputeTilewiseScan<TileSize>(array_view<const T>(input), array_view<T>(output), array_view<T>(tileSums));
 
         // recurse if necessary
         if (tileCount >  1)

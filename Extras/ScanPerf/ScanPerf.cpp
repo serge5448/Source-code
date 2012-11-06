@@ -47,7 +47,7 @@ class TiledScan : public IScan
 public:
     void Scan(array_view<int, 1>(in), array_view<int, 1>(out)) const
     {
-        ScanAmpTiled<64>(array_view<int, 1>(in), array_view<int, 1>(out));
+        ScanAmpTiled<256>(array_view<int, 1>(in), array_view<int, 1>(out));
     }
 };
 
@@ -62,7 +62,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
     accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
 
-    const size_t elementCount = 8 * 1024 * 1024;
+    const size_t elementCount = 4 * 1024 * 1024;
 
     std::vector<int> input(elementCount, 1);
     std::vector<int> result(input.size());
