@@ -16,7 +16,9 @@
 
 #include "stdafx.h"
 
-#include "Scan.h"
+#include "ScanSimple.h"
+#include "ScanSequential.h"
+#include "ScanTiled.h"
 #include "Utilities.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -147,7 +149,7 @@ namespace ScanTests
             std::vector<int> expected(input.size());
             std::iota(begin(expected), end(expected), 0);
 
-            PrescanAmpTiled(begin(input), end(input), result.begin());
+            PrescanAmpTiled<4>(begin(input), end(input), result.begin());
             
             Assert::IsTrue(expected == result, Msg(expected, result).c_str());
 		}
@@ -159,7 +161,7 @@ namespace ScanTests
             std::vector<int> expected(input.size());
             std::iota(begin(expected), end(expected), 1);
 
-            ScanAmpTiled(begin(input), end(input), result.begin());
+            ScanAmpTiled<4>(begin(input), end(input), result.begin());
             
             Assert::IsTrue(expected == result, Msg(expected, result).c_str());
 		}
@@ -170,7 +172,7 @@ namespace ScanTests
             std::vector<int> result(8);
 			std::array<int, 8> expected = { 1, 4, 10, 12, 19, 28, 28, 33 };
 
-            ScanAmpTiled(begin(input), end(input), result.begin());
+            ScanAmpTiled<4>(begin(input), end(input), result.begin());
             
 			std::vector<int> exp(begin(expected), end(expected));
             Assert::IsTrue(exp == result, Msg(exp, result).c_str());
@@ -183,7 +185,7 @@ namespace ScanTests
             std::vector<int> expected(input.size());
             std::iota(begin(expected), end(expected), 1);
 
-			ScanAmpTiled(begin(input), end(input), result.begin());
+			ScanAmpTiled<4>(begin(input), end(input), result.begin());
             
             Assert::IsTrue(expected == result, Msg(expected, result).c_str());
 		}

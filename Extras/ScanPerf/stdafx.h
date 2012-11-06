@@ -14,3 +14,5 @@
 #include <array>
 
 #include <amp.h>
+
+#include "Timer.h"
