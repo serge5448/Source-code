@@ -22,6 +22,7 @@
 
 using namespace Extras;
 
+// TODO: Can I get rid of all this?
 class IScan
 {
 public:
@@ -43,43 +44,74 @@ public:
     }
 };
 
+template <int TileSize>
 class TiledScan : public IScan
 {
 public:
     void Scan(array_view<int, 1>(in), array_view<int, 1>(out)) const
     {
-        ScanAmpTiled<256>(array_view<int, 1>(in), array_view<int, 1>(out));
+        ScanAmpTiled<TileSize>(array_view<int, 1>(in), array_view<int, 1>(out));
     }
 };
 
+template <int TileSize>
 class TiledOptScan : public IScan
 {
 public:
     void Scan(array_view<int, 1>(in), array_view<int, 1>(out)) const
     {
-        ScanAmpTiledOptimized<256>(array_view<int, 1>(in), array_view<int, 1>(out));
+        ScanAmpTiledOptimized<TileSize>(array_view<int, 1>(in), array_view<int, 1>(out));
     }
 };
 
 typedef std::pair<std::shared_ptr<IScan>, std::wstring> ScanDescription;
 
+inline bool ValidateSizes(unsigned tileSize, unsigned elementCount);
+
 int _tmain(int argc, _TCHAR* argv[])
 {
-    std::array<ScanDescription, 4> scans = {
-        ScanDescription(std::make_shared<DummyScan>(),          L"Overhead"),
-        ScanDescription(std::make_shared<SimpleScan>(),         L"Simple"),
-        ScanDescription(std::make_shared<TiledScan>(),          L"Tiled"),
-        ScanDescription(std::make_shared<TiledOptScan>(),       L"Tiled Optimized") };
-
-    accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
-
+#ifdef _DEBUG
+    const size_t elementCount = 2 * 1024;
+#else
     const size_t elementCount = 8 * 1024 * 1024;
+#endif
+    const int tileSize = 256;
+
+    // Make sure that elements can be split into tiles so the number of
+    // tiles in any dimension is less than 65536. 
+    static_assert((elementCount / tileSize < 65536), 
+        "Workload is too large or tiles are too small. This will cause runtime errors.");
+    static_assert((elementCount != 0), "Number of elements cannot be zero.");
+    static_assert((elementCount <= UINT_MAX), "Number of elements is too large.");
+
+    std::wcout << "Running kernels with " << elementCount << " elements, " 
+        << elementCount * sizeof(int) / 1024 << " KB of data ..."  << std::endl;    
+    std::wcout << "Tile size:     " << tileSize << std::endl;
+
+    if (!ValidateSizes(2, elementCount))
+        std::wcout << "Tile size is not factor of element count. This will cause runtime errors." 
+        << std::endl;
+
+    accelerator defaultDevice;
+    std::wcout << L"Using device : " << defaultDevice.get_description() << std::endl;
+    if (defaultDevice == accelerator(accelerator::direct3d_ref))
+        std::wcout << "WARNING!! No C++ AMP hardware accelerator detected, using the REF accelerator." << std::endl << 
+        "To see better performance run on C++ AMP capable hardware." << std::endl;
 
     std::vector<int> input(elementCount, 1);
     std::vector<int> result(input.size());
     std::vector<int> expected(input.size());
     std::iota(begin(expected), end(expected), 1);
 
+    std::array<ScanDescription, 4> scans = {
+        ScanDescription(std::make_shared<DummyScan>(),                      L"Overhead"),
+        ScanDescription(std::make_shared<SimpleScan>(),                     L"Simple"),
+        ScanDescription(std::make_shared<TiledScan<tileSize>>(),            L"Tiled"),
+        ScanDescription(std::make_shared<TiledOptScan<tileSize>>(),         L"Tiled Optimized") };
+
+    std::wcout << std::endl << "                                                           Total : Calc" << std::endl << std::endl;
+
+    accelerator_view view = accelerator(accelerator::default_accelerator).default_view;
     for (ScanDescription s : scans)
     {
         IScan* scanImpl = s.first.get();
@@ -101,10 +133,29 @@ int _tmain(int argc, _TCHAR* argv[])
             });
             copy(out, begin(result));
         });
-
-        std::wcout << "SUCCESS: " << scanName;
-        std::wcout.width(std::max(0U, 55 - scanName.length()));
-        std::wcout << std::right << std::fixed << std::setprecision(2) << totalTime << " : " << computeTime << " (ms)" << std::endl;        
+        if (!std::equal(begin(result), end(result), begin(expected)) && scanName.compare(L"Overhead") != 0)
+        {
+            std::wcout << "FAILED: " << scanName << std::endl;
+        }
+        else
+        {        
+            std::wcout << "SUCCESS: " << scanName;
+            std::wcout.width(std::max(0U, 55 - scanName.length()));
+            std::wcout << std::right << std::fixed << std::setprecision(2) << totalTime << " : " << computeTime << " (ms)" << std::endl;        
+        }
     }
     return 0;
+}
+
+//----------------------------------------------------------------------------
+//  Ensure that the reduction can repeatedly divide the elements by tile size.
+//----------------------------------------------------------------------------
+
+inline bool ValidateSizes(unsigned tileSize, unsigned elementCount)
+{
+    while ((elementCount % tileSize) == 0) 
+    {
+        elementCount /= tileSize;
+    }
+    return elementCount < tileSize;
 }
