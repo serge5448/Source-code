@@ -90,10 +90,10 @@ namespace Extras
             }
         }
     }
-
+ 
     namespace details
     {
-        // Calculate prefix sum for a tile
+        // For each tile calculate the exclusive scan.
 
         template <int TileSize, typename T>
         void ComputeTilewiseScanOptimized(array_view<const T> input, array_view<T> tilewiseOutput, array_view<T> tileSums)
@@ -101,7 +101,7 @@ namespace Extras
             const int elementCount = input.extent[0];
             const int tileCount = (elementCount + TileSize - 1) / TileSize;
             const int threadCount = tileCount * TileSize;
-    
+
             parallel_for_each(extent<1>(threadCount).tile<TileSize>(), [=](tiled_index<TileSize> tidx) restrict(amp) 
             {
                 const int tid = tidx.local[0];
@@ -110,7 +110,8 @@ namespace Extras
                 tile_static T tile[2][TileSize];
                 int inIdx = 0;
                 int outIdx = 1;
-                // Do the first pass (offset = 1) when loading elements into tile_static memory.
+
+                // Do the first pass (offset = 1) while loading elements into tile_static memory.
                 if (globid < elementCount)
                 {
                     if (tid >= 1)
@@ -133,9 +134,10 @@ namespace Extras
                     }
                     tidx.barrier.wait();
                 }
+
                 if (globid < elementCount)
                     tilewiseOutput[globid] = tile[outIdx][tid];
-                // Last thread in tile updates the tileSums.
+                // Last thread in tile updates the tileSum for that tile.
                 if (tid == TileSize - 1)
                     tileSums[tidx.tile[0]] = tile[outIdx][tid];
             });

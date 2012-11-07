@@ -66,7 +66,7 @@ namespace Extras
         const int elementCount = input.extent[0];
         const int tileCount = (elementCount + TileSize - 1) / TileSize;
 
-        // Compute tile-wise scans and reductions
+        // Compute tile-wise scans and reductions.
         array<T> tileSums(tileCount);
         details::ComputeTilewiseScan<TileSize>(array_view<const T>(input), array_view<T>(output), array_view<T>(tileSums));
 
@@ -93,7 +93,7 @@ namespace Extras
 
     namespace details
     {
-        // Calculate prefix sum for a tile
+        // For each tile calculate the exclusive scan.
 
         template <int TileSize, typename T>
         void ComputeTilewiseScan(array_view<const T> input, array_view<T> tilewiseOutput, array_view<T> tileSums)
@@ -110,11 +110,17 @@ namespace Extras
                 tile_static T tile[2][TileSize];
                 int inIdx = 0;
                 int outIdx = 1;
+                // Do the first pass (offset = 1) while loading elements into tile_static memory.
                 if (globid < elementCount)
-                    tile[outIdx][tid] = input[globid];
+                {
+                    if (tid >= 1)
+                        tile[outIdx][tid] = input[globid - 1] + input[globid];
+                    else 
+                        tile[outIdx][tid] = input[globid];
+                }
                 tidx.barrier.wait();
 
-                for (int offset = 1; offset < TileSize; offset *= 2)
+                for (int offset = 2; offset < TileSize; offset *= 2)
                 {
                     Switch(inIdx, outIdx);
 
