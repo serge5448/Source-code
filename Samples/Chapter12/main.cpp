@@ -99,7 +99,7 @@ int main()
 #endif
 
     // TODO_AMP: Reinstate this when the driver bug is fixed.
-    TdrExample();
+    //TdrExample();
 
 #ifdef _DEBUG
     int size = tileSize * 3;
