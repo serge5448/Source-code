@@ -71,7 +71,9 @@ void NBodySimpleInteractionEngine::BodyBodyInteraction(const ParticleCpu* const 
         float invDistCube =  invDist * invDist * invDist;
         float s = m_particleMass * invDistCube;
 
-        acc = r * s;
+        // Note: The book code contains typos, the = operator is used instead of +=. 
+        // The code below is correct.
+        acc += r * s;
     });
 
     vel += acc * m_deltaTime;
