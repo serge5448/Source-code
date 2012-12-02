@@ -23,8 +23,6 @@ using namespace concurrency;
 
 namespace Extras
 {
-    // http://www.csce.uark.edu/~mqhuang/courses/5013/f2011/lab/Lab-5-scan.pdf 
-
     // Exclusive scan, output element at i contains the sum of elements [0]...[i-1].
 
     template <typename InIt, typename OutIt>

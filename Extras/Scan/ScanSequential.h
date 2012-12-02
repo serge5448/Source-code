@@ -23,7 +23,7 @@ using namespace concurrency;
 
 namespace Extras
 {
-    // Exclusive scan, output element at i contains the sum of elements [0]...[i-1].
+    // Exclusive scan (or prescan), output element at i contains the sum of elements [0]...[i-1].
 
     template <typename InIt, typename OutIt>
     void Prescan(InIt first, InIt last, OutIt outFirst)
