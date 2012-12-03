@@ -227,7 +227,19 @@ namespace ScanTests
             std::vector<int> expected(input.size());
             std::iota(begin(expected), end(expected), 0);
 
-            ExclusiveScanAmpTiledOptimized<4>(begin(input), end(input), result.begin());
+            ExclusiveScanAmpTiledOptimized<8>(begin(input), end(input), result.begin());
+            
+            Assert::IsTrue(expected == result, Msg(expected, result).c_str());
+		}
+
+		TEST_METHOD(InclusiveScanAmpTiledOptimizedTests_SimpleOneTile)
+		{
+            std::vector<int> input(8, 1);
+            std::vector<int> result(input.size());
+            std::vector<int> expected(input.size());
+            std::iota(begin(expected), end(expected), 1);
+
+            InclusiveScanAmpTiledOptimized<8>(begin(input), end(input), result.begin());
             
             Assert::IsTrue(expected == result, Msg(expected, result).c_str());
 		}
@@ -244,7 +256,7 @@ namespace ScanTests
             Assert::IsTrue(expected == result, Msg(expected, result, 12).c_str());
 		}
 
-        TEST_METHOD(ScanAmpTiledOptimizedTests_Simple)
+        TEST_METHOD(InclusiveScanAmpTiledOptimizedTests_Simple)
 		{
             std::vector<int> input(16, 1);
             std::vector<int> result(input.size());
@@ -256,7 +268,7 @@ namespace ScanTests
             Assert::IsTrue(expected == result, Msg(expected, result, 16).c_str());
 		}
 
-        TEST_METHOD(ScanAmpTiledOptimizedTests_ComplexOneTile)
+        TEST_METHOD(InclusiveScanAmpTiledOptimizedTests_ComplexOneTile)
 		{
 			std::array<int, 8> input =    { 1, 3,  6,  2,  7,  9,  0,  5 };
             std::vector<int> result(8);
@@ -268,7 +280,7 @@ namespace ScanTests
             Assert::IsTrue(exp == result, Msg(exp, result, 8).c_str());
 		}
 
-        TEST_METHOD(ScanAmpTiledOptimizedTests_Complex)
+        TEST_METHOD(InclusiveScanAmpTiledOptimizedTests_Complex)
 		{
 			std::array<int, 8> input =    { 1, 3,  6,  2,  7,  9,  0,  5 };
             std::vector<int> result(8);

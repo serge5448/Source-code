@@ -70,14 +70,14 @@ namespace Extras
         array<T> tileSums(tileCount);
         details::ComputeTilewiseScan<TileSize>(array_view<const T>(input), array_view<T>(output), array_view<T>(tileSums));
 
-        // recurse if necessary
         if (tileCount >  1)
         {
+            // Calculate the initial value of each tile based on the tileSums.
             array<T> tmp(tileSums.extent);
             InclusiveScanAmpTiled<TileSize>(array_view<T>(tileSums), array_view<T>(tmp));
             copy(tmp, tileSums);
 
-            if (elementCount > 0) 
+            if (elementCount > 0)
             {
                 parallel_for_each(extent<1>(elementCount), [=, &tileSums] (concurrency::index<1> idx) restrict (amp) 
                 {

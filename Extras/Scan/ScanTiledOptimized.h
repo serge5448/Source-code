@@ -35,7 +35,7 @@ namespace Extras
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
         
-		ExclusiveScanAmpTiledOptimized<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
+		InclusiveScanAmpTiledOptimized<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
 
 		// ExclusiveScan is just an offset scan, so shift the results by one.
         copy(out.section(0, size - 1), outFirst + 1);
@@ -54,23 +54,23 @@ namespace Extras
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
         
-        ExclusiveScanAmpTiledOptimized<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
+        InclusiveScanAmpTiledOptimized<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
         copy(out, outFirst);
     }
 
     template <int TileSize, typename T>
-    void ExclusiveScanAmpTiledOptimized(array_view<T, 1> input, array_view<T, 1> output)
+    
+    void InclusiveScanAmpTiledOptimized(array_view<T, 1> input, array_view<T, 1> output)
     {
         assert(input.extent[0] == output.extent[0]);
 
         const int elementCount = input.extent[0];
-        const int tileCount = (elementCount + (TileSize * 2) - 1) / (TileSize * 2);
+        const int tileCount = (elementCount + (TileSize) - 1) / (TileSize);
 
-        // Compute tile-wise scans and reductions
+        // Compute scan for each tile and store their total values in tileSums
         array<T> tileSums(tileCount);
-        details::ComputeExclusiveTiledScanOptimized<TileSize>(array_view<const T>(input), array_view<T>(output), array_view<T>(tileSums));
+        details::ComputeTilewiseScanOptimized<TileSize>(array_view<const T>(input), array_view<T>(output), array_view<T>(tileSums));
 
-        // recurse if necessary
         if (tileCount >  1)
         {
             array<T> tmp(tileSums.extent);
@@ -82,11 +82,11 @@ namespace Extras
             {
                 parallel_for_each(extent<1>(elementCount), [=, &tileSums] (concurrency::index<1> idx) restrict (amp) 
                 {
-                    const int tileIdx = idx[0] / (TileSize);
+                    const int tileIdx = idx[0] / TileSize;
                     if (tileIdx == 0)
                         output[idx] = output[idx];
                     else
-                        output[idx] = tileSums[tileIdx - 1] + output[idx];
+                        output[idx] = dest[tileIdx - 1] + output[idx];
                 });
             }
         }
@@ -105,59 +105,45 @@ namespace Extras
         // http://www.csce.uark.edu/~mqhuang/courses/5013/f2011/lab/Lab-5-scan.pdf 
 
         template <int TileSize, typename T>
-        void ComputeExclusiveTiledScanOptimized(array_view<const T, 1> input, array_view<T> tilewiseOutput, array_view<T, 1> tileSums)
+        void ComputeTilewiseScanOptimized(array_view<const T, 1> input, array_view<T> tilewiseOutput, array_view<T, 1> tileSums)
         {
-            assert(input.extent[0] == (TileSize * 2));
-            assert(tilewiseOutput.extent[0] == TileSize);
+            assert(input.extent[0] == tilewiseOutput.extent[0]);
+            assert(tileSums.extent[0] == input.extent[0] / TileSize);
 
             const int elementCount = input.extent[0];
-            const int tileCount = (elementCount + (TileSize * 2) - 1) / (TileSize * 2);
+            const int tileCount = (elementCount + (TileSize) - 1) / TileSize;
             const int threadCount = tileCount * TileSize;
 
             parallel_for_each(extent<1>(threadCount).tile<TileSize>(), [=](tiled_index<TileSize> tidx) restrict(amp) 
             {
                 const int tid = tidx.local[0];
                 const int globid = tidx.global[0];
-                int offset = 1;
-                tile_static T tile[TileSize * 2];
 
-                tile[2 * tid] = input[2 * globid];
-                tile[2 * tid + 1] = input[2 * globid + 1];
-
-                const int n = TileSize * 2;
-                for (int d = n >> 1; d > 0; d >>= 1)
-                {
-                    tidx.barrier.wait();
-                    if (tid < d)
-                    {
-                        const int ai = offset * (2 * tid + 1) - 1; 
-                        const int bi = offset * (2 * tid + 2) - 1; 
-                        tile[bi] += tile[ai];
-                    }
-                    offset *= 2;
-                }
-
-                if (tid == 0) 
-                    tile[n - 1] = 0;
-
-                for (int d = 1; d < n; d*= 2)
-                {
-                    offset >>= 1;
-
-                    tidx.barrier.wait();
-                    if (tid < d)
-                    {
-                        const int ai = offset * (2 * tid + 1) - 1; 
-                        const int bi = offset * (2 * tid + 2) - 1; 
-                        T t = tile[ai]; 
-                        tile[ai] = tile[bi]; 
-                        tile[bi] += t;
-                    }
-                }
+                tile_static T tile[2][TileSize];
+                int in = 0;
+                int out = 1;
+                if (globid < elementCount)
+                    tile[out][tid] = input[globid];
                 tidx.barrier.wait();
 
-                tilewiseOutput[2 * tid] = tile[2 * tid]; 
-                tilewiseOutput[2 * tid + 1] = tile[2 * tid + 1]; 
+                for (int offset = 1; offset < TileSize; offset *= 2) 
+                {
+                    Switch(in, out);
+
+                    if (globid < elementCount)
+                    {
+                        if (tid  >= offset)
+                            tile[out][tid] = tile[in][tid - offset] + tile[in][tid];
+                        else 
+                            tile[out][tid] = tile[in][tid];
+                    }
+                    tidx.barrier.wait();
+                }
+                if (globid < elementCount)
+                    tilewiseOutput[globid] = tile[out][tid];
+                // Last thread in the tile updates the tileSums array that holds the sums for each tile
+                if (tid == TileSize - 1)
+                    tileSums[tidx.tile[0]] = tile[out][tid];
             });
         }
     }
