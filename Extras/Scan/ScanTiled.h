@@ -23,10 +23,10 @@ using namespace concurrency;
 
 namespace Extras
 {
-    // Exclusive scan, output element at i contains the sum of elements [0]...[i-1].
+    // Exclusive scan (or prescan), output element at i contains the sum of elements [0]...[i-1].
 
     template <int TileSize, typename InIt, typename OutIt>
-    inline void PrescanAmpTiled(InIt first, InIt last, OutIt outFirst)
+    inline void ExclusiveScanAmpTiled(InIt first, InIt last, OutIt outFirst)
     {
         typedef InIt::value_type T;
 
@@ -35,9 +35,9 @@ namespace Extras
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
         
-		ScanAmpTiled<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
+		InclusiveScanAmpTiled<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
 
-		// Prescan is just an offset scan, so shift the results by one.
+		// ExclusiveScan is just an offset scan, so shift the results by one.
         copy(out.section(0, size - 1), outFirst + 1);
 		*outFirst = T(0);
     }
@@ -45,7 +45,7 @@ namespace Extras
     // Inclusive scan, output element at i contains the sum of elements [0]...[i].
 
     template <int TileSize, typename InIt, typename OutIt>
-    inline void ScanAmpTiled(InIt first, InIt last, OutIt outFirst)
+    inline void InclusiveScanAmpTiled(InIt first, InIt last, OutIt outFirst)
     {
         typedef InIt::value_type T;
 
@@ -54,12 +54,12 @@ namespace Extras
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
         
-        ScanAmpTiled<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
+        InclusiveScanAmpTiled<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
         copy(out, outFirst);
     }
 
     template <int TileSize, typename T>
-    void ScanAmpTiled(array_view<T, 1> input, array_view<T, 1> output)
+    void InclusiveScanAmpTiled(array_view<T, 1> input, array_view<T, 1> output)
     {
         assert(input.extent[0] == output.extent[0]);
 
@@ -74,7 +74,7 @@ namespace Extras
         if (tileCount >  1)
         {
             array<T> tmp(tileSums.extent);
-            ScanAmpTiled<TileSize>(array_view<T>(tileSums), array_view<T>(tmp));
+            InclusiveScanAmpTiled<TileSize>(array_view<T>(tileSums), array_view<T>(tmp));
             copy(tmp, tileSums);
 
             if (elementCount > 0) 
@@ -93,7 +93,7 @@ namespace Extras
 
     namespace details
     {
-        // For each tile calculate the exclusive scan.
+        // For each tile calculate the inclusive scan.
 
         template <int TileSize, typename T>
         void ComputeTilewiseScan(array_view<const T> input, array_view<T> tilewiseOutput, array_view<T> tileSums)

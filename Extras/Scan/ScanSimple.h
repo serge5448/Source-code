@@ -26,7 +26,7 @@ namespace Extras
     // Exclusive scan, output element at i contains the sum of elements [0]...[i-1].
 
     template <typename InIt, typename OutIt>
-    inline void PrescanAmpSimple(InIt first, InIt last, OutIt outFirst)
+    inline void ExclusiveScanAmpSimple(InIt first, InIt last, OutIt outFirst)
     {
         typedef InIt::value_type T;
 
@@ -35,9 +35,9 @@ namespace Extras
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
         
-		ScanAmpSimple(array_view<T, 1>(in), array_view<T, 1>(out));
+		InclusiveScanAmpSimple(array_view<T, 1>(in), array_view<T, 1>(out));
 
-		// Prescan is just an offset scan, so shift the results by one.
+		// ExclusiveScan is just an offset scan, so shift the results by one.
         copy(out.section(0, size - 1), outFirst + 1);
 		*outFirst = T(0);
     }
@@ -45,7 +45,7 @@ namespace Extras
     // Inclusive scan, output element at i contains the sum of elements [0]...[i].
 
     template <typename InIt, typename OutIt>
-    inline void ScanAmpSimple(InIt first, InIt last, OutIt outFirst)
+    inline void InclusiveScanAmpSimple(InIt first, InIt last, OutIt outFirst)
     {
         typedef InIt::value_type T;
 
@@ -54,12 +54,12 @@ namespace Extras
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
         
-        ScanAmpSimple(array_view<T, 1>(in), array_view<T, 1>(out));
+        InclusiveScanAmpSimple(array_view<T, 1>(in), array_view<T, 1>(out));
         copy(out, outFirst);
     }
 
     template <typename T>
-    void ScanAmpSimple(array_view<T, 1> input, array_view<T, 1> output)
+    void InclusiveScanAmpSimple(array_view<T, 1> input, array_view<T, 1> output)
     {
         assert(input.extent[0] == output.extent[0]);
 

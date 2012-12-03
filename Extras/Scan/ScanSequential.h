@@ -23,10 +23,10 @@ using namespace concurrency;
 
 namespace Extras
 {
-    // Exclusive scan (or prescan), output element at i contains the sum of elements [0]...[i-1].
+    // Exclusive scan, output element at i contains the sum of elements [0]...[i-1].
 
     template <typename InIt, typename OutIt>
-    void Prescan(InIt first, InIt last, OutIt outFirst)
+    void ExclusiveScan(InIt first, InIt last, OutIt outFirst)
     {
         typedef OutIt::value_type T;
 
@@ -38,7 +38,7 @@ namespace Extras
     // Inclusive scan, output element at i contains the sum of elements [0]...[i].
 
     template <typename InIt, typename OutIt>
-    void Scan(InIt first, InIt last, OutIt outFirst)
+    void InclusiveScan(InIt first, InIt last, OutIt outFirst)
     {
         typedef OutIt::value_type T;
 
