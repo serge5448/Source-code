@@ -211,97 +211,113 @@ namespace ScanTests
             std::vector<int> expected(input.size());
             std::iota(begin(expected), end(expected), 0);
 
-			ExclusiveScanAmpTiled<4>(begin(input), end(input), result.begin());
+			ExclusiveScanAmpTiled<256>(begin(input), end(input), result.begin());
             
             Assert::IsTrue(expected == result, Msg(expected, result).c_str());
 		}
     };
 
-    TEST_CLASS(ScanAmpTiledOptimizedTests)
+    TEST_CLASS(ScanAmpOptimizedTests)
 	{
 	public:
-		TEST_METHOD(ExclusiveScanAmpTiledOptimizedTests_SimpleOneTile)
+		TEST_METHOD(ExclusiveScanAmpOptimizedTests_SimpleOneTile)
 		{
             std::vector<int> input(8, 1);
             std::vector<int> result(input.size());
             std::vector<int> expected(input.size());
             std::iota(begin(expected), end(expected), 0);
 
-            ExclusiveScanAmpTiledOptimized<8>(begin(input), end(input), result.begin());
+            ExclusiveScanAmpOptimized<4>(begin(input), end(input), result.begin());
             
             Assert::IsTrue(expected == result, Msg(expected, result).c_str());
 		}
 
-		TEST_METHOD(InclusiveScanAmpTiledOptimizedTests_SimpleOneTile)
-		{
-            std::vector<int> input(8, 1);
-            std::vector<int> result(input.size());
-            std::vector<int> expected(input.size());
-            std::iota(begin(expected), end(expected), 1);
-
-            InclusiveScanAmpTiledOptimized<8>(begin(input), end(input), result.begin());
-            
-            Assert::IsTrue(expected == result, Msg(expected, result).c_str());
-		}
-
-		TEST_METHOD(ExclusiveScanAmpTiledOptimizedTests_Simple)
+        TEST_METHOD(ExclusiveScanAmpOptimizedTests_SimpleTwoTiles)
 		{
             std::vector<int> input(16, 1);
             std::vector<int> result(input.size());
             std::vector<int> expected(input.size());
             std::iota(begin(expected), end(expected), 0);
 
-            ExclusiveScanAmpTiledOptimized<4>(begin(input), end(input), result.begin());
-            
-            Assert::IsTrue(expected == result, Msg(expected, result, 12).c_str());
-		}
-
-        TEST_METHOD(InclusiveScanAmpTiledOptimizedTests_Simple)
-		{
-            std::vector<int> input(16, 1);
-            std::vector<int> result(input.size());
-            std::vector<int> expected(input.size());
-            std::iota(begin(expected), end(expected), 1);
-
-            InclusiveScanAmpTiledOptimized<4>(begin(input), end(input), result.begin());
+            ExclusiveScanAmpOptimized<4>(begin(input), end(input), result.begin());
             
             Assert::IsTrue(expected == result, Msg(expected, result, 16).c_str());
 		}
 
-        TEST_METHOD(InclusiveScanAmpTiledOptimizedTests_ComplexOneTile)
+        TEST_METHOD(ExclusiveScanAmpOptimizedTests_ComplexOneTile)
 		{
-			std::array<int, 8> input =    { 1, 3,  6,  2,  7,  9,  0,  5 };
+			std::array<int, 8> input = { 1, 2, 3, 4,  5,  6,  7,  8 };
             std::vector<int> result(8);
-			std::array<int, 8> expected = { 1, 4, 10, 12, 19, 28, 28, 33 };
+			//std::array<int, 8> expected = { +1, 3, +3, 10, +5, 11, +7, 36 }; // Up sweep only
+			//std::array<int, 8> expected = { +1, 3, +3, 10, +5, 11, +7, 0 }; // Down sweep depth = 0
+			//std::array<int, 8> expected = { +1, 3, +3,  0, +5, 11, +7, 10 }; // Down sweep depth = 1
+			//std::array<int, 8> expected = { +1, 0, +3,  3, +5, 10, +7, 21 }; // Down sweep depth = 2
+		    std::array<int, 8> expected = {  0, 1,  3,  6, 10, 15, 21, 28 }; // Final Result
 
-            InclusiveScanAmpTiledOptimized<8>(begin(input), end(input), result.begin());
-            
-			std::vector<int> exp(begin(expected), end(expected));
-            Assert::IsTrue(exp == result, Msg(exp, result, 8).c_str());
-		}
-
-        TEST_METHOD(InclusiveScanAmpTiledOptimizedTests_Complex)
-		{
-			std::array<int, 8> input =    { 1, 3,  6,  2,  7,  9,  0,  5 };
-            std::vector<int> result(8);
-			std::array<int, 8> expected = { 1, 4, 10, 12, 19, 28, 28, 33 };
-
-            InclusiveScanAmpTiledOptimized<2>(begin(input), end(input), result.begin());
+            ExclusiveScanAmpOptimized<4>(begin(input), end(input), result.begin());
             
 			std::vector<int> exp(begin(expected), end(expected));
             Assert::IsTrue(exp == result, Msg(exp, result).c_str());
 		}
 
-		TEST_METHOD(ScanAmpTiledOptimizedTests_Large)
+		TEST_METHOD(InclusiveScanAmpOptimizedTests_SimpleOneTile)
+		{
+            std::vector<int> input(8, 1);
+            std::vector<int> result(input.size());
+            std::vector<int> expected(input.size());
+            std::iota(begin(expected), end(expected), 1);
+
+            InclusiveScanAmpOptimized<4>(begin(input), end(input), result.begin());
+            
+            Assert::IsTrue(expected == result, Msg(expected, result).c_str());
+		}
+
+        TEST_METHOD(InclusiveScanAmpOptimizedTests_SimpleTwoTiles)
+		{
+            std::vector<int> input(16, 1);
+            std::vector<int> result(input.size());
+            std::vector<int> expected(input.size());
+            std::iota(begin(expected), end(expected), 1);
+
+            InclusiveScanAmpOptimized<4>(begin(input), end(input), result.begin());
+            
+            Assert::IsTrue(expected == result, Msg(expected, result, 16).c_str());
+		}
+
+        TEST_METHOD(InclusiveScanAmpOptimizedTests_ComplexOneTile)
+		{
+			std::array<int, 8> input =    { 1, 3,  6,  2,  7,  9,  0,  5 };
+            std::vector<int> result(8);
+			std::array<int, 8> expected = { 1, 4, 10, 12, 19, 28, 28, 33 };
+
+            InclusiveScanAmpOptimized<4>(begin(input), end(input), result.begin());
+            
+			std::vector<int> exp(begin(expected), end(expected));
+            Assert::IsTrue(exp == result, Msg(exp, result, 8).c_str());
+		}
+
+        TEST_METHOD(InclusiveScanAmpOptimizedTests_ComplexTwoTiles)
+		{
+			std::array<int, 8> input =    { 1, 3,  6,  2,  7,  9,  0,  5 };
+            std::vector<int> result(8);
+			std::array<int, 8> expected = { 1, 4, 10, 12, 19, 28, 28, 33 };
+
+            InclusiveScanAmpOptimized<2>(begin(input), end(input), result.begin());
+            
+			std::vector<int> exp(begin(expected), end(expected));
+            Assert::IsTrue(exp == result, Msg(exp, result).c_str());
+		}
+
+		TEST_METHOD(InclusiveScanAmpOptimizedTests_Large)
 		{
             std::vector<int> input(2048, 1);
             std::vector<int> result(input.size());
             std::vector<int> expected(input.size());
             std::iota(begin(expected), end(expected), 1);
 
-			InclusiveScanAmpTiledOptimized<4>(begin(input), end(input), result.begin());
+			InclusiveScanAmpOptimized<64>(begin(input), end(input), result.begin());
             
-            Assert::IsTrue(expected == result, Msg(expected, result, 12).c_str());
+            Assert::IsTrue(expected == result, Msg(expected, result, 24).c_str());
 		}
 	};
 

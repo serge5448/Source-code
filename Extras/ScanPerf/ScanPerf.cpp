@@ -60,7 +60,7 @@ class TiledOptScan : public IScan
 public:
     void Scan(array_view<int, 1>(in), array_view<int, 1>(out)) const
     {
-        InclusiveScanAmpTiledOptimized<TileSize>(array_view<int, 1>(in), array_view<int, 1>(out));
+        ExclusiveScanAmpOptimized<TileSize>(array_view<int, 1>(in), array_view<int, 1>(out));
     }
 };
 
@@ -133,11 +133,11 @@ int _tmain(int argc, _TCHAR* argv[])
             });
             copy(out, begin(result));
         });
-        //if (!std::equal(begin(result), end(result), begin(expected)) && scanName.compare(L"Overhead") != 0)
-        //{
-        //    std::wcout << "FAILED:  " << scanName << std::endl;
-        //}
-        //else
+        if (!std::equal(begin(result), end(result), begin(expected)) && (scanName.compare(L"Overhead") != 0))
+        {
+            std::wcout << "FAILED:  " << scanName << std::endl;
+        }
+        else
         {        
             std::wcout << "SUCCESS: " << scanName;
             std::wcout.width(std::max(0U, 55 - scanName.length()));

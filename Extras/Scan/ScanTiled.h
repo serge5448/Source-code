@@ -62,6 +62,7 @@ namespace Extras
     void InclusiveScanAmpTiled(array_view<T, 1> input, array_view<T, 1> output)
     {
         assert(input.extent[0] == output.extent[0]);
+        assert(input.extent[0] > 0);
 
         const int elementCount = input.extent[0];
         const int tileCount = (elementCount + TileSize - 1) / TileSize;
@@ -70,24 +71,22 @@ namespace Extras
         array<T> tileSums(tileCount);
         details::ComputeTilewiseScan<TileSize>(array_view<const T>(input), array_view<T>(output), array_view<T>(tileSums));
 
-        if (tileCount >  1)
+        if (tileCount > 1)
         {
             // Calculate the initial value of each tile based on the tileSums.
             array<T> tmp(tileSums.extent);
+            // TODO: This should really be exclusive scan, the copies fix this.
             InclusiveScanAmpTiled<TileSize>(array_view<T>(tileSums), array_view<T>(tmp));
-            copy(tmp, tileSums);
+            copy(tmp.section(index<1>(0), concurrency::extent<1>(tmp.extent - 1)), 
+                tileSums.section(index<1>(1), concurrency::extent<1>(tileSums.extent - 1)));
+            int zero = 0;
+            copy(&zero, tileSums.section(0, 1));
 
-            if (elementCount > 0)
+            parallel_for_each(extent<1>(elementCount), [=, &tileSums] (concurrency::index<1> idx) restrict (amp) 
             {
-                parallel_for_each(extent<1>(elementCount), [=, &tileSums] (concurrency::index<1> idx) restrict (amp) 
-                {
-                    int tileIdx = idx[0] / TileSize;
-                    if (tileIdx == 0)
-                        output[idx] = output[idx];
-                    else
-                        output[idx] = tileSums[tileIdx - 1] + output[idx];
-                });
-            }
+                int tileIdx = idx[0] / TileSize;
+                output[idx] += tileSums[tileIdx];
+            });
         }
     }
 
@@ -102,21 +101,22 @@ namespace Extras
             const int tileCount = (elementCount + TileSize - 1) / TileSize;
             const int threadCount = tileCount * TileSize;
 
+            // TODO: Change this to use twice the number of threads
             parallel_for_each(extent<1>(threadCount).tile<TileSize>(), [=](tiled_index<TileSize> tidx) restrict(amp) 
             {
                 const int tid = tidx.local[0];
-                const int globid = tidx.global[0];
+                const int gid = tidx.global[0];
 
-                tile_static T tile[2][TileSize];
+                tile_static T tileData[2][TileSize];
                 int inIdx = 0;
                 int outIdx = 1;
                 // Do the first pass (offset = 1) while loading elements into tile_static memory.
-                if (globid < elementCount)
+                if (gid < elementCount)
                 {
                     if (tid >= 1)
-                        tile[outIdx][tid] = input[globid - 1] + input[globid];
+                        tileData[outIdx][tid] = input[gid - 1] + input[gid];
                     else 
-                        tile[outIdx][tid] = input[globid];
+                        tileData[outIdx][tid] = input[gid];
                 }
                 tidx.barrier.wait();
 
@@ -124,20 +124,20 @@ namespace Extras
                 {
                     Switch(inIdx, outIdx);
 
-                    if (globid < elementCount) 
+                    if (gid < elementCount) 
                     {
                         if (tid >= offset)
-                            tile[outIdx][tid] = tile[inIdx][tid - offset] + tile[inIdx][tid];
+                            tileData[outIdx][tid] = tileData[inIdx][tid - offset] + tileData[inIdx][tid];
                         else 
-                            tile[outIdx][tid] = tile[inIdx][tid];
+                            tileData[outIdx][tid] = tileData[inIdx][tid];
                     }
                     tidx.barrier.wait();
                 }
-                if (globid < elementCount)
-                    tilewiseOutput[globid] = tile[outIdx][tid];
-                // Last thread in tile updates the tileSums.
+                if (gid < elementCount)
+                    tilewiseOutput[gid] = tileData[outIdx][tid];
+                // Last thread in tileData updates the tileSums.
                 if (tid == TileSize - 1)
-                    tileSums[tidx.tile[0]] = tile[outIdx][tid];
+                    tileSums[tidx.tile[0]] = tileData[outIdx][tid];
             });
         }
 
