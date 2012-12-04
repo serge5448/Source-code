@@ -135,7 +135,7 @@ namespace Extras
                 }
                 if (gid < elementCount)
                     tilewiseOutput[gid] = tileData[outIdx][tid];
-                // Last thread in tileData updates the tileSums.
+                // Last thread in tile updates the tileSums.
                 if (tid == TileSize - 1)
                     tileSums[tidx.tile[0]] = tileData[outIdx][tid];
             });

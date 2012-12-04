@@ -16,6 +16,8 @@
 
 #include "stdafx.h"
 
+#include <CppUnitTest.h>
+
 #include "ScanSimple.h"
 #include "ScanSequential.h"
 #include "ScanTiled.h"
