@@ -19,6 +19,8 @@
 #include <amp.h>
 #include <assert.h>
 
+#include "Utilities.h"
+
 using namespace concurrency;
 
 namespace Extras
@@ -37,7 +39,6 @@ namespace Extras
         
 		ExclusiveScanAmpOptimized<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
 
-		// ExclusiveScan is just an offset scan, so shift the results by one.
         copy(out, outFirst);
     }
 
@@ -53,6 +54,7 @@ namespace Extras
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
         
+        // ExclusiveScan is just an offset scan, so shift the results by one.
         ExclusiveScanAmpOptimized<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
         copy(out.section(1, size - 1), outFirst);
 		*(outFirst + size - 1) = *(last - 1) + *(outFirst + size - 2);
@@ -69,30 +71,26 @@ namespace Extras
 
         // Compute scan for each tile and store their total values in tileSums
         array<T> tileSums(tileCount);
-        details::ComputeTilewiseScanOptimized<TileSize>(array_view<const T>(input), array_view<T>(output), array_view<T>(tileSums));
+        details::ComputeTilewiseExclusiveScanOptimized<TileSize>(array_view<const T>(input), output, array_view<T>(tileSums));
+        
+#ifdef _DEBUG
+        std::wcout << ContainerWidth(10) << "tileSums[" << tileSums.extent[0] << "] = " << tileSums << std::endl;
+        std::wcout << ContainerWidth(10) << "output = [" << output.extent[0] << "] = " << output << std::endl;
+#endif
         if (tileCount > 1)
         {
             array<T> tmp(tileSums.extent);
-            // TODO: This should really be exclusive scan, the copies fix this.
             InclusiveScanAmpTiled<TileSize>(array_view<T>(tileSums), array_view<T>(tmp));
-            copy(tmp.section(index<1>(0), concurrency::extent<1>(tmp.extent - 1)), 
-                tileSums.section(index<1>(1), concurrency::extent<1>(tileSums.extent - 1)));
-            int zero = 0;
-            copy(&zero, tileSums.section(0, 1));
-            {
-                std::vector<int> d(tileSums.extent[0]);
-                copy(tileSums, d.begin());
-                std::wcout << d << std::endl;
-            }
-            {
-                std::vector<int> d(output.extent[0]);
-                copy(output, d.begin());
-                std::wcout << d << std::endl;
-            }
+            copy(tmp, tileSums);
+#ifdef _DEBUG
+            std::cout << ContainerWidth(4) << "tileSums[" << tileSums.extent[0] << "] = " << tileSums << std::endl;
+            std::wcout << "output = [" << output.extent[0] << "] = " << output << std::endl;
+#endif
             parallel_for_each(extent<1>(elementCount), [=, &tileSums] (concurrency::index<1> idx) restrict (amp) 
             {
                 const int tileIdx = idx[0] / (TileSize * 2);
-                output[idx] += tileSums[tileIdx];
+                if (tileIdx != 0)
+                    output[idx] += tileSums[tileIdx - 1];
             });
         }
     }
@@ -110,24 +108,24 @@ namespace Extras
         // http://www.csce.uark.edu/~mqhuang/courses/5013/f2011/lab/Lab-5-scan.pdf 
 
         template <int TileSize, typename T>
-        void ComputeTilewiseScanOptimized(array_view<const T, 1> input, array_view<T> tilewiseOutput, array_view<T, 1> tileSums)
+        void ComputeTilewiseExclusiveScanOptimized(array_view<const T, 1> input, array_view<T> tilewiseOutput, array_view<T, 1> tileSums)
         {
             assert(input.extent[0] == tilewiseOutput.extent[0]);
             assert(tileSums.extent[0] == input.extent[0] / (TileSize * 2));
             assert((input.extent[0] / (TileSize * 2)) >= 1);
             assert((input.extent[0] % (TileSize * 2)) == 0);
+            // TODO: Assert that TileSize is a power of 2.
 
             const int elementCount = input.extent[0];
-            const int tileCount = (elementCount + (TileSize * 2) - 1) / (TileSize * 2);
-            const int threadCount = tileCount * TileSize;
 
-            parallel_for_each(extent<1>(threadCount).tile<TileSize>(), [=](tiled_index<TileSize> tidx) restrict(amp) 
+            parallel_for_each(extent<1>(elementCount / 2).tile<TileSize>(), [=](tiled_index<TileSize> tidx) restrict(amp) 
             {
                 const int tid = tidx.local[0];
                 const int gid = tidx.global[0];
                 tile_static T tileData[TileSize * 2];
 
                 // Load data into tileData, load 2x elements per tile.
+
                 tileData[2 * tid] = input[2 * gid];
                 tileData[2 * tid + 1] = input[2 * gid + 1];
 
@@ -146,17 +144,19 @@ namespace Extras
                     offset *= 2;
                 }
 
+                // TODO: Is another barrier required here?
                 //  Zero highest element in tile
-                if (tid == (TileSize - 1)) 
+                if (tid == 0) 
                     tileData[TileSize * 2 - 1] = 0;
 
                 // Down sweep phase.
-                // Now: offset = TileSize * 2;
+                // Now: offset = TileSize * 2
+
                 for (int stride = 1; stride <= TileSize; stride *= 2)
                 {
+                    offset >>= 1;
                     tidx.barrier.wait();
 
-                    offset >>= 1;
                     if (tid < stride)
                     {
                         const int ai = offset * (2 * tid + 1) - 1; 
@@ -169,12 +169,14 @@ namespace Extras
                 tidx.barrier.wait();
 
                 // Copy tile results out.
+
                 tilewiseOutput[2 * gid] = tileData[2 * tid]; 
                 tilewiseOutput[2 * gid + 1] = tileData[2 * tid + 1];
 
-                // Copy tile total out.
+                // Copy tile total out, this is the inclusive total.
+
                 if (tid == (TileSize - 1))
-                    tileSums[tidx.tile[0]] = tileData[2 * tid + 1] + input[2 * gid + 1];
+                    tileSums[tidx.tile[0]] = tileData[2 * TileSize - 1] + input[2 * gid + 1];
             });
         }
     }

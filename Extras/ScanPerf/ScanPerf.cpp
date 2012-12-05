@@ -134,15 +134,12 @@ int _tmain(int argc, _TCHAR* argv[])
             copy(out, begin(result));
         });
         if (!std::equal(begin(result), end(result), begin(expected)) && (scanName.compare(L"Overhead") != 0))
-        {
-            std::wcout << "FAILED:  " << scanName << std::endl;
-        }
-        else
-        {        
+            std::wcout << "FAILED:  " << scanName;
+        else     
             std::wcout << "SUCCESS: " << scanName;
-            std::wcout.width(std::max(0U, 55 - scanName.length()));
-            std::wcout << std::right << std::fixed << std::setprecision(2) << totalTime << " : " << computeTime << " (ms)" << std::endl;        
-        }
+
+        std::wcout.width(std::max(0U, 55 - scanName.length()));
+        std::wcout << std::right << std::fixed << std::setprecision(2) << totalTime << " : " << computeTime << " (ms)" << std::endl;        
     }
     return 0;
 }
