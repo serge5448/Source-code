@@ -309,8 +309,7 @@ namespace ScanTests
 			//std::array<int, 8> expected =  {  1, 0, 3,  3,  5,  0,  7, 11 }; // Down sweep depth = 1
 			//std::array<int, 8> expected =  {  0, 1, 3,  6,  0,  5, 11, 18 }; // Down sweep depth = 2
 		    //std::array<int, 16> expected = {  0, 1, 3,  6,  0,  5, 11, 18,  0,  9, 19, 30 };  // Down sweep depth = 2
-		      std::array<int, 16> expected = {  0, 1, 3,  6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120 }; // Final Result
-		    //std::array<int, 16> expected = {  1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120, 136 }; // Final Result shifted
+		    std::array<int, 16> expected =   {  0, 1, 3,  6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 120 }; // Final Result
 
             ExclusiveScanAmpOptimized<4>(begin(input), end(input), result.begin());
             
@@ -318,7 +317,7 @@ namespace ScanTests
             Assert::IsTrue(exp == result, Msg(exp, result, 16).c_str());
 		}
 
-        TEST_METHOD(InclusiveScanAmpOptimizedTests_ComplexTwoTiles2)
+        TEST_METHOD(InclusiveScanAmpOptimizedTests_ComplexTwoTiles)
 		{
 			std::array<int, 8> input =    { 1, 3,  6,  2,  7,  9,  0,  5 };
             std::vector<int> result(input.size());
@@ -332,7 +331,7 @@ namespace ScanTests
 
 		TEST_METHOD(ExclusiveScanAmpOptimizedTests_Large)
 		{
-            std::vector<int> input(2048, 1);
+            std::vector<int> input(4096, 1);
             std::vector<int> result(input.size());
             std::vector<int> expected(input.size());
             std::iota(begin(expected), end(expected), 0);
@@ -341,5 +340,17 @@ namespace ScanTests
             
             Assert::IsTrue(expected == result, Msg(expected, result, 24).c_str());
 		}
+
+        TEST_METHOD(InclusiveScanAmpOptimizedTests_Large)
+        {
+            std::vector<int> input(4096, 1);
+            std::vector<int> result(input.size());
+            std::vector<int> expected(input.size());
+            std::iota(begin(expected), end(expected), 1);
+            // Does not work for tiles sizes greater than 32. Relying on warp sync.
+            InclusiveScanAmpOptimized<256>(begin(input), end(input), result.begin());
+
+            Assert::IsTrue(expected == result, Msg(expected, result, 24).c_str());
+        }
 	};
 }

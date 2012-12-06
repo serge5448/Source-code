@@ -105,7 +105,7 @@ namespace Extras
 
         // For each tile calculate the exclusive scan.
         //
-        // http://www.csce.uark.edu/~mqhuang/courses/5013/f2011/lab/Lab-5-scan.pdf 
+        // http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html
 
         template <int TileSize, typename T>
         void ComputeTilewiseExclusiveScanOptimized(array_view<const T, 1> input, array_view<T> tilewiseOutput, array_view<T, 1> tileSums)
@@ -115,6 +115,7 @@ namespace Extras
             assert((input.extent[0] / (TileSize * 2)) >= 1);
             assert((input.extent[0] % (TileSize * 2)) == 0);
             // TODO: Assert that TileSize is a power of 2.
+            // TODO: Assert that elementCount is a power of 2.
 
             const int elementCount = input.extent[0];
 
