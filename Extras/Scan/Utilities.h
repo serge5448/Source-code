@@ -20,6 +20,77 @@
 #include <xutility>
 
 //===============================================================================
+//  Check that a parameter known at compile time is a power of two.
+//===============================================================================
+
+    static const unsigned int Bit08 = 0x80;
+    static const unsigned int Bit16 = 0x8000;
+    static const unsigned int Bit32 = 0x80000000;
+
+    template<unsigned int N> 
+    struct IsPowerOfTwoStatic 
+    {
+        enum 
+        { 
+            result = 
+                ((CountBitsStatic<N, Bit32>::result == 1) ? TRUE : FALSE)
+        };
+    };
+
+    // While 1 is technically 2^0, for the purposes of calculating 
+    // tile size it isn't useful.
+    template <>
+    struct IsPowerOfTwoStatic<1>
+    {
+        enum { result = FALSE };
+    };
+
+    template<unsigned int N, unsigned int MaxBit>
+    struct CountBitsStatic
+    {
+        enum 
+        { 
+            result = (IsBitSetStatic<N, MaxBit>::result + 
+                CountBitsStatic<N, (MaxBit >> 1)>::result) 
+        };
+    };
+
+    // Ensure that template program terminates.
+    template<unsigned int N>
+    struct CountBitsStatic<N, 0>
+    {
+        enum { result = FALSE };
+    };
+
+    template<unsigned int N, int MaxBit>
+    struct IsBitSetStatic
+    {
+        enum { result = (N & MaxBit) ? 1 : 0 };
+    };
+
+//===============================================================================
+//  Check that a parameter known at runtime is a power of two.
+//===============================================================================
+
+    template <unsigned int MaxBit>
+    unsigned int CountBits(unsigned int n) 
+    {
+        return (n & 0x1) + CountBits<MaxBit-1>(n >> 1);
+    }
+
+    // template specialization to terminate the recursion when there's only one bit left
+    template<>
+    unsigned int CountBits<1>(unsigned int n) 
+    {
+        return n & 0x1;
+    }
+
+    BOOL IsPowerOfTwo(unsigned int n)
+    {
+        return (CountBits<32>(n) == 1);
+    };
+
+//===============================================================================
 //  Stream output overloads
 //===============================================================================
 

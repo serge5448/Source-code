@@ -63,6 +63,7 @@ namespace Extras
     template <int TileSize, typename T>  
     void ExclusiveScanAmpOptimized(array_view<T, 1> input, array_view<T, 1> output)
     {
+        static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
         assert(input.extent[0] > 0);
         assert(input.extent[0] == output.extent[0]);
 
@@ -114,8 +115,6 @@ namespace Extras
             assert(tileSums.extent[0] == input.extent[0] / (TileSize * 2));
             assert((input.extent[0] / (TileSize * 2)) >= 1);
             assert((input.extent[0] % (TileSize * 2)) == 0);
-            // TODO: Assert that TileSize is a power of 2.
-            // TODO: Assert that elementCount is a power of 2.
 
             const int elementCount = input.extent[0];
 
