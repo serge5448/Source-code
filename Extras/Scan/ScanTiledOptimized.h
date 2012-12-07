@@ -61,11 +61,11 @@ namespace Extras
     template <int TileSize, typename T>  
     void ExclusiveScanAmpOptimized(array_view<T, 1> input, array_view<T, 1> output)
     {
+        static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
         assert(input.extent[0] > 0);
         assert(input.extent[0] == output.extent[0]);
         // TODO: Need to fix scan to support arrays that are not a whole number of tiles.
         //assert(input.extent[0] % TileSize == 0);
-        //static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
 
         const int elementCount = input.extent[0];
         const int tileCount = (elementCount + (TileSize * 2) - 1) / (TileSize * 2);
@@ -82,7 +82,7 @@ namespace Extras
         {
             array<T> tmp(tileSums.extent);
             InclusiveScanAmpTiled<TileSize>(array_view<T>(tileSums), array_view<T>(tmp));
-            copy(tmp, tileSums);
+            std::swap(tmp, tileSums);
 #ifdef _DEBUG
             std::cout << ContainerWidth(4) << "tileSums[" << tileSums.extent[0] << "] = " << tileSums << std::endl;
             std::wcout << "output = [" << output.extent[0] << "] = " << output << std::endl;
