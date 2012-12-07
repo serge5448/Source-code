@@ -353,4 +353,26 @@ namespace ScanTests
             Assert::IsTrue(expected == result, Msg(expected, result, 24).c_str());
         }
 	};
+
+    TEST_CLASS(DetailsTests)
+    {
+    public:
+        TEST_METHOD(DetailsTests_InclusiveToExclusive)
+        {
+            std::vector<int> input(8);
+            std::iota(begin(input), end(input), 1);
+            std::vector<int> result(input.size());
+            std::vector<int> expected(input.size());
+            std::iota(begin(expected), end(expected), 0);
+ 
+            concurrency::array<int, 1> in(input.size());
+            concurrency::array<int, 1> out(input.size());
+            copy(begin(input), end(input), in);
+
+            Extras::details::InclusiveToExclusive(array_view<int, 1>(in), array_view<int, 1>(out));
+
+            copy(out, std::begin(result));
+            Assert::IsTrue(expected == result, Msg(expected, result, 8).c_str());
+        }
+    };
 }

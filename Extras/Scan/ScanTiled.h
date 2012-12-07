@@ -33,13 +33,10 @@ namespace Extras
         const int size = int(distance(first, last));
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
-        copy(first, last, in);
-        
-		InclusiveScanAmpTiled<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
-
-		// ExclusiveScan is just an offset scan, so shift the results by one.
-        copy(out.section(0, size - 1), outFirst + 1);
-		*outFirst = T(0);
+        copy(first, last, in);      
+		ExclusiveScanAmpTiled<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
+        details::InclusiveToExclusive(array_view<T, 1>(out), array_view<T, 1>(in));
+        copy(in, outFirst);
     }
 
     // Inclusive scan, output element at i contains the sum of elements [0]...[i].
@@ -52,8 +49,7 @@ namespace Extras
         const int size = int(distance(first, last));
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
-        copy(first, last, in);
-        
+        copy(first, last, in);       
         InclusiveScanAmpTiled<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
         copy(out, outFirst);
     }
@@ -61,10 +57,11 @@ namespace Extras
     template <int TileSize, typename T>
     void InclusiveScanAmpTiled(array_view<T, 1> input, array_view<T, 1> output)
     {
-        static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
+//        static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
         assert(input.extent[0] == output.extent[0]);
         assert(input.extent[0] > 0);
-        assert(input.extent[0] % TileSize == 0);
+        // TODO: Need to fix scan to support arrays that are not a whole number of tiles.
+        //assert(input.extent[0] % TileSize == 0);
 
         const int elementCount = input.extent[0];
         const int tileCount = (elementCount + TileSize - 1) / TileSize;
@@ -77,12 +74,7 @@ namespace Extras
         {
             // Calculate the initial value of each tile based on the tileSums.
             array<T> tmp(tileSums.extent);
-            // TODO: This should really be exclusive scan, the copies fix this.
-            InclusiveScanAmpTiled<TileSize>(array_view<T>(tileSums), array_view<T>(tmp));
-            copy(tmp.section(index<1>(0), concurrency::extent<1>(tmp.extent - 1)), 
-                tileSums.section(index<1>(1), concurrency::extent<1>(tileSums.extent - 1)));
-            int zero = 0;
-            copy(&zero, tileSums.section(0, 1));
+            ExclusiveScanAmpTiled<TileSize>(array_view<T>(tileSums), array_view<T>(tmp));
 
             parallel_for_each(extent<1>(elementCount), [=, &tileSums] (concurrency::index<1> idx) restrict (amp) 
             {
@@ -90,6 +82,14 @@ namespace Extras
                 output[idx] += tileSums[tileIdx];
             });
         }
+    }
+
+    template <int TileSize, typename T>
+    void ExclusiveScanAmpTiled(array_view<T, 1> input, array_view<T, 1> output)
+    {
+		InclusiveScanAmpTiled<TileSize>(input, output);
+        details::InclusiveToExclusive(output, input);
+        std::swap(input, output);
     }
 
     namespace details

@@ -34,12 +34,8 @@ namespace Extras
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
-        
-		InclusiveScanAmpSimple(array_view<T, 1>(in), array_view<T, 1>(out));
-
-		// ExclusiveScan is just an offset scan, so shift the results by one.
-        copy(out.section(0, size - 1), outFirst + 1);
-		*outFirst = T(0);
+        ExclusiveScanAmpSimple(array_view<T, 1>(in), array_view<T, 1>(out));
+        copy(in, outFirst);
     }
 
     // Inclusive scan, output element at i contains the sum of elements [0]...[i].
@@ -53,7 +49,6 @@ namespace Extras
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
-        
         InclusiveScanAmpSimple(array_view<T, 1>(in), array_view<T, 1>(out));
         copy(out, outFirst);
     }
@@ -77,5 +72,13 @@ namespace Extras
             });
             std::swap(input, output);
         }
+    }
+
+    template <typename T>
+    void ExclusiveScanAmpSimple(array_view<T, 1> input, array_view<T, 1> output)
+    {
+		InclusiveScanAmpSimple(input, output);
+        details::InclusiveToExclusive(output, input);
+        std::swap(input, output);
     }
 }

@@ -35,10 +35,8 @@ namespace Extras
         const int size = int(distance(first, last));
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
-        copy(first, last, in);
-        
+        copy(first, last, in);   
 		ExclusiveScanAmpOptimized<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
-
         copy(out, outFirst);
     }
 
@@ -52,20 +50,22 @@ namespace Extras
         const int size = int(distance(first, last));
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
-        copy(first, last, in);
-        
+        copy(first, last, in);      
         // ExclusiveScan is just an offset scan, so shift the results by one.
         ExclusiveScanAmpOptimized<TileSize>(array_view<T, 1>(in), array_view<T, 1>(out));
         copy(out.section(1, size - 1), outFirst);
 		*(outFirst + size - 1) = *(last - 1) + *(outFirst + size - 2);
     }
 
+    // TODO: Should be inclusive.
     template <int TileSize, typename T>  
     void ExclusiveScanAmpOptimized(array_view<T, 1> input, array_view<T, 1> output)
     {
-        static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
         assert(input.extent[0] > 0);
         assert(input.extent[0] == output.extent[0]);
+        // TODO: Need to fix scan to support arrays that are not a whole number of tiles.
+        //assert(input.extent[0] % TileSize == 0);
+        //static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
 
         const int elementCount = input.extent[0];
         const int tileCount = (elementCount + (TileSize * 2) - 1) / (TileSize * 2);
@@ -95,13 +95,25 @@ namespace Extras
             });
         }
     }
- 
+
     namespace details
     {
         template <int B, int LogB>
         inline int ConflictFreeOffset(int offset) restrict(amp)
         {
             return n >> B + n >> (2 * LogB);
+        }
+        
+        template <typename T>
+        void InclusiveToExclusive(array_view<T, 1> inclusiveScan, array_view<T, 1> exclusiveScan)
+        {
+            parallel_for_each(inclusiveScan.extent, [=] (concurrency::index<1> idx) restrict (amp) 
+            {
+                if (idx[0] == 0)
+                    exclusiveScan[idx] = T(0);
+                else
+                    exclusiveScan[idx] = inclusiveScan[idx - 1];
+            });
         }
 
         // For each tile calculate the exclusive scan.
@@ -115,6 +127,7 @@ namespace Extras
             assert(tileSums.extent[0] == input.extent[0] / (TileSize * 2));
             assert((input.extent[0] / (TileSize * 2)) >= 1);
             assert((input.extent[0] % (TileSize * 2)) == 0);
+            //static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
 
             const int elementCount = input.extent[0];
 
