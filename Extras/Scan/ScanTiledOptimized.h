@@ -61,14 +61,19 @@ namespace Extras
     template <int TileSize, typename T>  
     void ExclusiveScanAmpOptimized(array_view<T, 1> input, array_view<T, 1> output)
     {
-        static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
-        assert(input.extent[0] > 0);
-        assert(input.extent[0] == output.extent[0]);
-        // TODO: Need to fix scan to support arrays that are not a whole number of tiles.
-        //assert(input.extent[0] % TileSize == 0);
-
+        const int domainSize = TileSize * 2;
         const int elementCount = input.extent[0];
-        const int tileCount = (elementCount + (TileSize * 2) - 1) / (TileSize * 2);
+        const int tileCount = (elementCount + domainSize - 1) / domainSize;
+
+        assert(elementCount > 0);
+        assert(elementCount == output.extent[0]);
+        assert(tileSums.extent[0] == elementCount / domainSize);
+        assert((elementCount / domainSize) >= 1);
+        assert((elementCount % domainSize) == 0);
+        static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
+        // TODO: Need to fix scan to support arrays that are not a whole number of tiles.
+        //assert(elementCount % TileSize == 0);
+
 
         // Compute scan for each tile and store their total values in tileSums
         array<T> tileSums(tileCount);
@@ -80,6 +85,7 @@ namespace Extras
 #endif
         if (tileCount > 1)
         {
+            // Calculate the initial value of each tile based on the tileSums.
             array<T> tmp(tileSums.extent);
             InclusiveScanAmpTiled<TileSize>(array_view<T>(tileSums), array_view<T>(tmp));
             std::swap(tmp, tileSums);
@@ -87,11 +93,11 @@ namespace Extras
             std::cout << ContainerWidth(4) << "tileSums[" << tileSums.extent[0] << "] = " << tileSums << std::endl;
             std::wcout << "output = [" << output.extent[0] << "] = " << output << std::endl;
 #endif
-            parallel_for_each(extent<1>(elementCount), [=, &tileSums] (concurrency::index<1> idx) restrict (amp) 
+            // Add the tileSums all the elements in each tile except the first tile.
+            parallel_for_each(extent<1>(elementCount - TileSize), [=, &tileSums] (concurrency::index<1> idx) restrict (amp) 
             {
-                const int tileIdx = idx[0] / (TileSize * 2);
-                if (tileIdx != 0)
-                    output[idx] += tileSums[tileIdx - 1];
+                const int tileIdx = (idx[0] + TileSize) / domainSize;
+                output[idx + TileSize] += tileSums[tileIdx - 1];
             });
         }
     }
@@ -118,24 +124,19 @@ namespace Extras
 
         // For each tile calculate the exclusive scan.
         //
-        // http://http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html
+        // http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html
 
         template <int TileSize, typename T>
         void ComputeTilewiseExclusiveScanOptimized(array_view<const T, 1> input, array_view<T> tilewiseOutput, array_view<T, 1> tileSums)
         {
-            assert(input.extent[0] == tilewiseOutput.extent[0]);
-            assert(tileSums.extent[0] == input.extent[0] / (TileSize * 2));
-            assert((input.extent[0] / (TileSize * 2)) >= 1);
-            assert((input.extent[0] % (TileSize * 2)) == 0);
-            //static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
-
+            static const int domainSize = TileSize * 2;
             const int elementCount = input.extent[0];
 
             parallel_for_each(extent<1>(elementCount / 2).tile<TileSize>(), [=](tiled_index<TileSize> tidx) restrict(amp) 
             {
                 const int tid = tidx.local[0];
                 const int gid = tidx.global[0];
-                tile_static T tileData[TileSize * 2];
+                tile_static T tileData[domainSize];
 
                 // Load data into tileData, load 2x elements per tile.
 
@@ -160,10 +161,10 @@ namespace Extras
                 // TODO: Is another barrier required here?
                 //  Zero highest element in tile
                 if (tid == 0) 
-                    tileData[TileSize * 2 - 1] = 0;
+                    tileData[domainSize - 1] = 0;
 
                 // Down sweep phase.
-                // Now: offset = TileSize * 2
+                // Now: offset = domainSize
 
                 for (int stride = 1; stride <= TileSize; stride *= 2)
                 {
