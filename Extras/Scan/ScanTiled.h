@@ -60,8 +60,6 @@ namespace Extras
         static_assert(IsPowerOfTwoStatic<TileSize>::result, "TileSize must be a power of 2.");
         assert(input.extent[0] == output.extent[0]);
         assert(input.extent[0] > 0);
-        // TODO: Need to fix scan to support arrays that are not a whole number of tiles.
-        //assert(input.extent[0] % TileSize == 0);
 
         const int elementCount = input.extent[0];
         const int tileCount = (elementCount + TileSize - 1) / TileSize;
@@ -103,7 +101,6 @@ namespace Extras
             const int tileCount = (elementCount + TileSize - 1) / TileSize;
             const int threadCount = tileCount * TileSize;
 
-            // TODO: Change this to use twice the number of threads
             parallel_for_each(extent<1>(threadCount).tile<TileSize>(), [=](tiled_index<TileSize> tidx) restrict(amp) 
             {
                 const int tid = tidx.local[0];

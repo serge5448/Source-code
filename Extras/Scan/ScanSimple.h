@@ -70,7 +70,7 @@ namespace Extras
                 else
                     output[idx] = input[idx];
             });
-            std::swap(input, output);
+            input = output;
         }
     }
 
