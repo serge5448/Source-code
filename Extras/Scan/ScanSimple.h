@@ -19,14 +19,14 @@
 #include <amp.h>
 #include <assert.h>
 
-using namespace concurrency;
-
 namespace Extras
 {
+    //===============================================================================
     // Exclusive scan, output element at i contains the sum of elements [0]...[i-1].
+    //===============================================================================
 
     template <typename InIt, typename OutIt>
-    inline void ExclusiveScanAmpSimple(InIt first, InIt last, OutIt outFirst)
+    inline void ExclusiveScanSimple(InIt first, InIt last, OutIt outFirst)
     {
         typedef InIt::value_type T;
 
@@ -34,20 +34,22 @@ namespace Extras
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
-        details::ScanAmpSimple<kExclusive>(array_view<T, 1>(in), array_view<T, 1>(out));
+        details::ScanSimple<details::kExclusive>(concurrency::array_view<T, 1>(in), concurrency::array_view<T, 1>(out));
         copy(in, outFirst);
     }
 
     template <typename T>
-    void ExclusiveScanAmpSimple(array_view<T, 1> input, array_view<T, 1> output)
+    void ExclusiveScanSimple(concurrency::array_view<T, 1> input, concurrency::array_view<T, 1> output)
     {
-		details::ScanAmpSimple<kExclusive>(input, output);
+		details::ScanSimple<details::kExclusive>(input, output);
     }
 
+    //===============================================================================
     // Inclusive scan, output element at i contains the sum of elements [0]...[i].
+    //===============================================================================
 
     template <typename InIt, typename OutIt>
-    inline void InclusiveScanAmpSimple(InIt first, InIt last, OutIt outFirst)
+    inline void InclusiveScanSimple(InIt first, InIt last, OutIt outFirst)
     {
         typedef InIt::value_type T;
 
@@ -55,21 +57,25 @@ namespace Extras
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
-        details::ScanAmpSimple<kInclusive>(array_view<T, 1>(in), array_view<T, 1>(out));
+        details::ScanSimple<details::kInclusive>(concurrency::array_view<T, 1>(in), concurrency::array_view<T, 1>(out));
         copy(out, outFirst);
     }
 
     template <typename T>
-    void InclusiveScanAmpSimple(array_view<T, 1> input, array_view<T, 1> output)
+    void InclusiveScanSimple(concurrency::array_view<T, 1> input, concurrency::array_view<T, 1> output)
     {
-		details::ScanAmpSimple<kInclusive>(input, output);
+		details::ScanSimple<details::kInclusive>(input, output);
     }
 
-namespace details
-{
+    //===============================================================================
+    //  Implementation. Not supposed to be called directly.
+    //===============================================================================
+
+    namespace details
+    {
         // Inclusive
         template <int Mode, typename T>
-        void ScanAmpSimple(array_view<T, 1> input, array_view<T, 1> output)
+        void ScanSimple(concurrency::array_view<T, 1> input, concurrency::array_view<T, 1> output)
         {
             assert(input.extent[0] == output.extent[0]);
             for (int offset = 1; offset < input.extent[0]; offset *= 2)
@@ -77,7 +83,7 @@ namespace details
                 assert(input.extent[0] == output.extent[0]);
                 assert(input.extent[0] % 2 == 0);
                 output.discard_data();
-                parallel_for_each(input.extent, [=](index<1> idx) restrict (amp)
+                parallel_for_each(input.extent, [=](concurrency::index<1> idx) restrict (amp)
                 {
                     if (idx[0] >= offset)
                         output[idx] = input[idx] + input[idx - offset];
@@ -87,7 +93,7 @@ namespace details
                 std::swap(input, output);
             }
             // TODO: Is this a better way to do this.
-            if (Mode == kInclusive)
+            if (Mode == details::kInclusive)
                 return;
 
             parallel_for_each(output.extent, [=] (concurrency::index<1> idx) restrict (amp) 

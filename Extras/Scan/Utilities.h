@@ -23,17 +23,21 @@
 //  Check that a parameter known at compile time is a power of two.
 //===============================================================================
 
-    static const unsigned int Bit08 = 0x80;
-    static const unsigned int Bit16 = 0x8000;
-    static const unsigned int Bit32 = 0x80000000;
+namespace Extras
+{
+    enum BitWidth
+    {
+        Bit08 = 0x80,
+        Bit16 = 0x8000,
+        Bit32 = 0x80000000
+    } ;
 
-    template<unsigned int N> 
-    struct IsPowerOfTwoStatic 
+    template<unsigned int N>
+    struct IsPowerOfTwoStatic
     {
         enum 
         { 
-            result = 
-                ((CountBitsStatic<N, Bit32>::result == 1) ? TRUE : FALSE)
+            result = ((CountBitsStatic<N, Bit32>::result == 1) ? TRUE : FALSE)
         };
     };
 
@@ -48,10 +52,9 @@
     template<unsigned int N, unsigned int MaxBit>
     struct CountBitsStatic
     {
-        enum 
+        enum
         { 
-            result = (IsBitSetStatic<N, MaxBit>::result + 
-                CountBitsStatic<N, (MaxBit >> 1)>::result) 
+            result = (IsBitSetStatic<N, MaxBit>::result + CountBitsStatic<N, (MaxBit >> 1)>::result) 
         };
     };
 
@@ -62,10 +65,10 @@
         enum { result = FALSE };
     };
 
-    template<unsigned int N, int MaxBit>
+    template<unsigned int N, int Bit>
     struct IsBitSetStatic
     {
-        enum { result = (N & MaxBit) ? 1 : 0 };
+        enum { result = (N & Bit) ? 1 : 0 };
     };
 
 //===============================================================================
@@ -90,91 +93,96 @@
         return (CountBits<32>(n) == 1);
     };
 
-//===============================================================================
-//  Stream output overloads
-//===============================================================================
+    //===============================================================================
+    //  Stream output overloads for std::vector, array and array_view.
+    //===============================================================================
 
-class ContainerWidth 
-{
-public:
-    explicit ContainerWidth(size_t width) : m_width(width) { }
+    class ContainerWidth 
+    {
+    public:
+        explicit ContainerWidth(size_t width) : m_width(width) { }
 
-private:
-    size_t m_width;
+    private:
+        size_t m_width;
 
-    template <class T, class Traits>
-    inline friend std::basic_ostream<T, Traits>& operator << 
-        (std::basic_ostream<T, Traits>& os, const ContainerWidth& container)
-    { 
-        os.iword(::details::geti()) = container.m_width; 
+        template <class T, class Traits>
+        inline friend std::basic_ostream<T, Traits>& operator << 
+            (std::basic_ostream<T, Traits>& os, const ContainerWidth& container)
+        { 
+            os.iword(details::geti()) = container.m_width; 
+            return os;
+        }
+    };
+
+    template<typename StrmType, typename Traits, typename VecT>
+    std::basic_ostream<StrmType, Traits>& operator<< (std::basic_ostream<StrmType, Traits>& os, const std::vector<VecT>& vec)
+    {
+        size_t i = std::min<size_t>(details::GetWidth(os), vec.size());
+        std::copy(std::begin(vec), std::begin(vec) + i, std::ostream_iterator<VecT, Traits::char_type>(os, details::GetDelimiter<Traits::char_type>()));
         return os;
     }
-};
 
-template<typename StrmType, typename Traits, typename VecT>
-std::basic_ostream<StrmType, Traits>& operator<< (std::basic_ostream<StrmType, Traits>& os, const std::vector<VecT>& vec)
-{
-    size_t i = std::min<size_t>(::details::GetWidth(os), vec.size());
-    std::copy(std::begin(vec), std::begin(vec) + i, std::ostream_iterator<VecT, Traits::char_type>(os, ::details::GetDelimiter<Traits::char_type>()));
-    return os;
-}
-
-template<typename StrmType, typename Traits, typename VecT>
-std::basic_ostream<StrmType, Traits>& operator<< (std::basic_ostream<StrmType, Traits>& os, concurrency::array<VecT, 1>& vec)
-{
-    size_t i = std::min<size_t>(::details::GetWidth(os), vec.extent[0]);
-    std::vector<const VecT> buffer(i);
-    copy(vec.section(0, i), std::begin(buffer));
-    std::copy(std::begin(buffer), std::begin(buffer) + i, std::ostream_iterator<VecT, Traits::char_type>(os, ::details::GetDelimiter<Traits::char_type>()));
-    return os;
-}
-
-template<typename StrmType, typename Traits, typename VecT>
-std::basic_ostream<StrmType, Traits>& operator<< (std::basic_ostream<StrmType, Traits>& os, const concurrency::array_view<VecT, 1>& vec)
-{
-    size_t i = std::min<size_t>(::details::GetWidth(os), vec.extent[0]);
-    std::vector<VecT> buffer(i);
-    copy(vec.section(0, i), std::begin(buffer));  
-    std::copy(std::begin(buffer), std::begin(buffer) + i, std::ostream_iterator<VecT, Traits::char_type>(os, ::details::GetDelimiter<Traits::char_type>()));
-    return os;
-}
-
-namespace details
-{
-    inline int geti() 
-    { 
-        static int i = std::ios_base::xalloc();
-        return i; 
+    template<typename StrmType, typename Traits, typename VecT>
+    std::basic_ostream<StrmType, Traits>& operator<< (std::basic_ostream<StrmType, Traits>& os, concurrency::array<VecT, 1>& vec)
+    {
+        size_t i = std::min<size_t>(details::GetWidth(os), vec.extent[0]);
+        std::vector<const VecT> buffer(i);
+        copy(vec.section(0, i), std::begin(buffer));
+        std::copy(std::begin(buffer), std::begin(buffer) + i, std::ostream_iterator<VecT, Traits::char_type>(os, details::GetDelimiter<Traits::char_type>()));
+        return os;
     }
 
-    template <typename STREAM>
-    size_t GetWidth(STREAM& os)
+    template<typename StrmType, typename Traits, typename VecT>
+    std::basic_ostream<StrmType, Traits>& operator<< (std::basic_ostream<StrmType, Traits>& os, const concurrency::array_view<VecT, 1>& vec)
     {
-        const size_t kDefaultWidth = 10;
-        size_t width = os.iword(geti());
-        if (width == 0)
-            width = kDefaultWidth;
-        return width;
+        size_t i = std::min<size_t>(details::GetWidth(os), vec.extent[0]);
+        std::vector<VecT> buffer(i);
+        copy(vec.section(0, i), std::begin(buffer));  
+        std::copy(std::begin(buffer), std::begin(buffer) + i, std::ostream_iterator<VecT, Traits::char_type>(os, details::GetDelimiter<Traits::char_type>()));
+        return os;
     }
 
-    template <typename T>
-    T* GetDelimiter()
-    {
-        assert(false);
-        return nullptr;
-    }
+    //===============================================================================
+    //  Implementation. Not supposed to be called directly.
+    //===============================================================================
 
-    template <>
-    char* GetDelimiter()
+    namespace details
     {
-        static char delim(',');
-        return &delim;
-    }
+        inline int geti() 
+        { 
+            static int i = std::ios_base::xalloc();
+            return i; 
+        }
 
-    template <>
-    wchar_t* GetDelimiter()
-    {
-        static wchar_t delim(L',');
-        return &delim;
+        template <typename STREAM>
+        size_t GetWidth(STREAM& os)
+        {
+            const size_t kDefaultWidth = 10;
+            size_t width = os.iword(geti());
+            if (width == 0)
+                width = kDefaultWidth;
+            return width;
+        }
+
+        template <typename T>
+        T* GetDelimiter()
+        {
+            assert(false);
+            return nullptr;
+        }
+
+        template <>
+        char* GetDelimiter()
+        {
+            static char delim(',');
+            return &delim;
+        }
+
+        template <>
+        wchar_t* GetDelimiter()
+        {
+            static wchar_t delim(L',');
+            return &delim;
+        }
     }
 }

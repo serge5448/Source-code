@@ -40,7 +40,7 @@ class SimpleScan : public IScan
 public:
     void Scan(array_view<int, 1>(in), array_view<int, 1>(out)) const
     {
-        InclusiveScanAmpSimple(array_view<int, 1>(in), array_view<int, 1>(out));
+        InclusiveScanSimple(array_view<int, 1>(in), array_view<int, 1>(out));
     }
 };
 
@@ -50,7 +50,7 @@ class TiledScan : public IScan
 public:
     void Scan(array_view<int, 1>(in), array_view<int, 1>(out)) const
     {
-        InclusiveScanAmpTiled<TileSize>(array_view<int, 1>(in), array_view<int, 1>(out));
+        InclusiveScanTiled<TileSize>(array_view<int, 1>(in), array_view<int, 1>(out));
     }
 };
 
@@ -60,7 +60,7 @@ class TiledOptScan : public IScan
 public:
     void Scan(array_view<int, 1>(in), array_view<int, 1>(out)) const
     {
-        ExclusiveScanAmpOptimized<TileSize>(array_view<int, 1>(in), array_view<int, 1>(out));
+        InclusiveScanOptimized<TileSize>(array_view<int, 1>(in), array_view<int, 1>(out));
     }
 };
 
@@ -71,11 +71,12 @@ inline bool ValidateSizes(unsigned tileSize, unsigned elementCount);
 int _tmain(int argc, _TCHAR* argv[])
 {
 #ifdef _DEBUG
-    const size_t elementCount = 2 * 1024;
+    const size_t elementCount = 1024;
+    const int tileSize = 64;
 #else
     const size_t elementCount = 8 * 1024 * 1024;
+    const int tileSize = 512;
 #endif
-    const int tileSize = 256;
 
     // Make sure that elements can be split into tiles so the number of
     // tiles in any dimension is less than 65536. 
@@ -139,8 +140,9 @@ int _tmain(int argc, _TCHAR* argv[])
             std::wcout << "SUCCESS: " << scanName;
 
         std::wcout.width(std::max(0U, 55 - scanName.length()));
-        std::wcout << std::right << std::fixed << std::setprecision(2) << totalTime << " : " << computeTime << " (ms)" << std::endl;        
+        std::wcout << std::right << std::fixed << std::setprecision(2) << totalTime << " : " << computeTime << " (ms)"  << std::endl;        
     }
+    std::wcout << std::endl;
     return 0;
 }
 

@@ -16,14 +16,15 @@
 
 #pragma once
 
-#include <amp.h>
-#include <assert.h>
+//===============================================================================
+//  Sequential scan implementation running on CPU. Used for testing.
+//===============================================================================
 
-using namespace concurrency;
-
-namespace Extras
+namespace ScanTests
 {
+    //===============================================================================
     // Exclusive scan, output element at i contains the sum of elements [0]...[i-1].
+    //===============================================================================
 
     template <typename InIt, typename OutIt>
     void ExclusiveScan(InIt first, InIt last, OutIt outFirst)
@@ -35,7 +36,9 @@ namespace Extras
             outFirst[i] = first[i - 1] + outFirst[i - 1];
     }
 
+    //===============================================================================
     // Inclusive scan, output element at i contains the sum of elements [0]...[i].
+    //===============================================================================
 
     template <typename InIt, typename OutIt>
     void InclusiveScan(InIt first, InIt last, OutIt outFirst)
