@@ -81,10 +81,10 @@ namespace Extras
             kInclusive = 1
         };
 
-        template <int B, int LogB>
-        inline int ConflictFreeOffset(int offset) restrict(amp)
+        template <int BlockSize, int LogBlockSize>
+        inline int ConflictFreeOffset(int n) restrict(amp)
         {
-            return n >> B + n >> (2 * LogB);
+            return n >> BlockSize + n >> (2 * LogBlockSize);
         }
 
         // For each tile calculate the exclusive scan.
@@ -121,7 +121,7 @@ namespace Extras
                     output[idx + domainSize] += tileSumScan[tileIdx];
                 });
             }
-       }
+        }
 
         template <int TileSize, int Mode, typename T>
         void ComputeTilewiseExclusiveScanOptimized(concurrency::array_view<const T, 1> input, concurrency::array_view<T> tilewiseOutput, concurrency::array_view<T, 1> tileSums)
@@ -151,10 +151,10 @@ namespace Extras
                 int offset = 1;
                 for (int stride = TileSize; stride > 0; stride >>= 1)
                 {
-                    tidx.barrier.wait();
+                    tidx.barrier.wait_with_tile_static_memory_fence();
                     if (tid < stride)
                     {
-                        const int ai = offset * (tidx2 + 1) - 1; 
+                        const int ai = offset * (tidx2 + 1) - 1;
                         const int bi = offset * (tidx2 + 2) - 1; 
                         tileData[bi] += tileData[ai];
                     }
@@ -170,7 +170,7 @@ namespace Extras
                 for (int stride = 1; stride <= TileSize; stride *= 2)
                 {
                     offset >>= 1;
-                    tidx.barrier.wait();
+                    tidx.barrier.wait_with_tile_static_memory_fence();
                 
                     if (tid < stride)
                     {
@@ -181,7 +181,7 @@ namespace Extras
                         tileData[bi] += t;
                     }
                 }
-                tidx.barrier.wait();
+                tidx.barrier.wait_with_tile_static_memory_fence();
 
                 // Copy tile results out. For inclusive scan shift all elements left.
 

@@ -130,11 +130,11 @@ namespace Extras
                     else 
                         tileData[outIdx][tid] = input[gid];
                 }
-                tidx.barrier.wait();
+                tidx.barrier.wait_with_tile_static_memory_fence();
 
                 for (int offset = 2; offset < TileSize; offset *= 2)
                 {
-                    Switch(inIdx, outIdx);
+                    SwitchIndeces(inIdx, outIdx);
 
                     if (gid < elementCount) 
                     {
@@ -143,7 +143,7 @@ namespace Extras
                         else 
                             tileData[outIdx][tid] = tileData[inIdx][tid];
                     }
-                    tidx.barrier.wait();
+                    tidx.barrier.wait_with_tile_static_memory_fence();
                 }
 
                 // Copy tile results out. For exclusive scan shift all elements right.
@@ -165,7 +165,7 @@ namespace Extras
             });
         }
 
-        void Switch(int& index1, int& index2) restrict(amp, cpu)
+        void SwitchIndeces(int& index1, int& index2) restrict(amp, cpu)
         {
             index1 = 1 - index1;
             index2 = 1 - index2;

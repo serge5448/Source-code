@@ -74,8 +74,8 @@ int _tmain(int argc, _TCHAR* argv[])
     const size_t elementCount = 1024;
     const int tileSize = 64;
 #else
-    const size_t elementCount = 8 * 1024 * 1024;
-    const int tileSize = 512;
+    const size_t elementCount = 4 * 1024 * 1024;
+    const int tileSize = 128;
 #endif
 
     // Make sure that elements can be split into tiles so the number of
