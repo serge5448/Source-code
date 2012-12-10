@@ -170,13 +170,25 @@ namespace ScanTests
 
         TEST_METHOD(InclusiveScanAmpTiledTests_Sequential_One_Tile)
 		{
-			std::array<int, 8> input =    {  1, 2, 3,  4,  5,  6,  7,  8 };
+			std::array<int, 8> input =    { 1, 2, 3,  4,  5,  6,  7,  8 };
             std::vector<int> result(input.size());
 		    //std::array<int, 8> expected = {  1, 3, 3,  7,  5, 11,  7, 15  };    // Load only
 		    //std::array<int, 8> expected = {  1, 3, 4, 10,  8, 18, 12, 26  };    // Offset == 2
-		    std::array<int, 8> expected = {  1, 3, 6, 10, 15, 21, 28, 36 };
+		    std::array<int, 8> expected = { 1, 3, 6, 10, 15, 21, 28, 36 };
 
             InclusiveScanAmpTiled<8>(begin(input), end(input), result.begin());
+            
+			std::vector<int> exp(begin(expected), end(expected));
+            Assert::IsTrue(exp == result, Msg(exp, result).c_str());
+		}
+
+        TEST_METHOD(ExclusiveScanAmpTiledTests_Sequential_One_Tile)
+		{
+			std::array<int, 8> input =    { 1, 2, 3,  4,  5,  6,  7,  8 };
+            std::vector<int> result(input.size());
+		    std::array<int, 8> expected = { 0, 1, 3, 6, 10, 15, 21, 28 };
+
+            ExclusiveScanAmpTiled<8>(begin(input), end(input), result.begin());
             
 			std::vector<int> exp(begin(expected), end(expected));
             Assert::IsTrue(exp == result, Msg(exp, result).c_str());
@@ -365,17 +377,17 @@ namespace ScanTests
             Assert::IsTrue(expected == result, Msg(expected, result, 24).c_str());
 		}
 
-        TEST_METHOD(InclusiveScanAmpOptimizedTests_Large)
-        {
+		TEST_METHOD(InclusiveScanAmpOptimizedTests_Large)
+		{
             std::vector<int> input(4096, 1);
             std::vector<int> result(input.size());
             std::vector<int> expected(input.size());
             std::iota(begin(expected), end(expected), 1);
             // Does not work for tiles sizes greater than 32. Relying on warp sync.
-            InclusiveScanAmpOptimized<256>(begin(input), end(input), result.begin());
-
+		    InclusiveScanAmpOptimized<256>(begin(input), end(input), result.begin());
+            
             Assert::IsTrue(expected == result, Msg(expected, result, 24).c_str());
-        }
+		}
 
         TEST_METHOD(ExclusiveScanAmpOptimizedTests_Simple_Overlapped_Tiles)
 		{
@@ -389,26 +401,4 @@ namespace ScanTests
             Assert::IsTrue(expected == result, Msg(expected, result, 16).c_str());
 		}
 	};
-
-    TEST_CLASS(DetailsTests)
-    {
-    public:
-        TEST_METHOD(DetailsTests_InclusiveToExclusive)
-        {
-            std::vector<int> input(8);
-            std::iota(begin(input), end(input), 1);
-            std::vector<int> result(input.size());
-            std::vector<int> expected(input.size());
-            std::iota(begin(expected), end(expected), 0);
- 
-            concurrency::array<int, 1> in(input.size());
-            concurrency::array<int, 1> out(input.size());
-            copy(begin(input), end(input), in);
-
-            Extras::details::InclusiveToExclusive(array_view<int, 1>(in), array_view<int, 1>(out));
-
-            copy(out, std::begin(result));
-            Assert::IsTrue(expected == result, Msg(expected, result, 8).c_str());
-        }
-    };
 }

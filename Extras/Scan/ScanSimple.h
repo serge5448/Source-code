@@ -34,8 +34,14 @@ namespace Extras
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
-        ExclusiveScanAmpSimple(array_view<T, 1>(in), array_view<T, 1>(out));
+        details::ScanAmpSimple<kExclusive>(array_view<T, 1>(in), array_view<T, 1>(out));
         copy(in, outFirst);
+    }
+
+    template <typename T>
+    void ExclusiveScanAmpSimple(array_view<T, 1> input, array_view<T, 1> output)
+    {
+		details::ScanAmpSimple<kExclusive>(input, output);
     }
 
     // Inclusive scan, output element at i contains the sum of elements [0]...[i].
@@ -49,36 +55,49 @@ namespace Extras
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
         copy(first, last, in);
-        InclusiveScanAmpSimple(array_view<T, 1>(in), array_view<T, 1>(out));
+        details::ScanAmpSimple<kInclusive>(array_view<T, 1>(in), array_view<T, 1>(out));
         copy(out, outFirst);
     }
 
     template <typename T>
     void InclusiveScanAmpSimple(array_view<T, 1> input, array_view<T, 1> output)
     {
-        assert(input.extent[0] == output.extent[0]);
-
-        for (int offset = 1; offset < input.extent[0]; offset *= 2)
-        {
-            assert(input.extent[0] == output.extent[0]);
-            assert(input.extent[0] % 2 == 0);
-            output.discard_data();
-            parallel_for_each(input.extent, [=](index<1> idx) restrict (amp)
-            {
-                if (idx[0] >= offset)
-                    output[idx] = input[idx] + input[idx - offset];
-                else
-                    output[idx] = input[idx];
-            });
-            input = output;
-        }
+		details::ScanAmpSimple<kInclusive>(input, output);
     }
 
-    template <typename T>
-    void ExclusiveScanAmpSimple(array_view<T, 1> input, array_view<T, 1> output)
-    {
-		InclusiveScanAmpSimple(input, output);
-        details::InclusiveToExclusive(output, input);
-        std::swap(input, output);
+namespace details
+{
+        // Inclusive
+        template <int Mode, typename T>
+        void ScanAmpSimple(array_view<T, 1> input, array_view<T, 1> output)
+        {
+            assert(input.extent[0] == output.extent[0]);
+            for (int offset = 1; offset < input.extent[0]; offset *= 2)
+            {
+                assert(input.extent[0] == output.extent[0]);
+                assert(input.extent[0] % 2 == 0);
+                output.discard_data();
+                parallel_for_each(input.extent, [=](index<1> idx) restrict (amp)
+                {
+                    if (idx[0] >= offset)
+                        output[idx] = input[idx] + input[idx - offset];
+                    else
+                        output[idx] = input[idx];
+                });
+                std::swap(input, output);
+            }
+            // TODO: Is this a better way to do this.
+            if (Mode == kInclusive)
+                return;
+
+            parallel_for_each(output.extent, [=] (concurrency::index<1> idx) restrict (amp) 
+            {
+                if (idx[0] == 0)
+                    output[idx] = T(0);
+                else
+                    output[idx] = input[idx - 1];
+            });
+            std::swap(input, output);
+        }
     }
 }
