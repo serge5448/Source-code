@@ -51,3 +51,24 @@ struct ResourceData
     D3DXMATRIX inverseView;
     D3DXCOLOR color;            // color value for changing particles color
 };
+
+//--------------------------------------------------------------------------------------
+//  Custom deleter for smart pointers to handle 
+//--------------------------------------------------------------------------------------
+
+template <typename T>
+struct FreeDeleter
+{
+    FreeDeleter() throw() // VC++ does not yet support C++11 noexcept.
+    {}
+
+    template <typename U>
+    FreeDeleter(const FreeDeleter<U>&, typename std::enable_if<std::is_convertible<U*, T*>::value, void>::type** = nullptr) throw()
+    {}
+
+    void operator()(T* const ptr) const throw()
+    {
+        static_assert(std::has_trivial_destructor<T>::value, "Cannot free memory for a type with a non-trivial destructor, use delete.");
+        std::free(ptr);
+    }
+};

@@ -245,7 +245,9 @@ int GetLevelOneCacheSize()
     if (nullptr == funcptr) 
         return defaultCacheSize;
 
-    std::unique_ptr<SYSTEM_LOGICAL_PROCESSOR_INFORMATION> buffer(nullptr);
+    typedef std::unique_ptr<SYSTEM_LOGICAL_PROCESSOR_INFORMATION, FreeDeleter<SYSTEM_LOGICAL_PROCESSOR_INFORMATION>> BufferType;
+
+    BufferType buffer(nullptr);
     DWORD bufferSize = 0;
 
     // Loop through twice. First pass gets buffer size, second pass fills buffer.
@@ -259,7 +261,7 @@ int GetLevelOneCacheSize()
         if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) 
             return defaultCacheSize;
 
-        buffer = std::unique_ptr<SYSTEM_LOGICAL_PROCESSOR_INFORMATION>((PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(bufferSize));
+        buffer = BufferType((SYSTEM_LOGICAL_PROCESSOR_INFORMATION*)std::malloc(bufferSize));
         if (nullptr == buffer.get()) 
             return defaultCacheSize;
     }
