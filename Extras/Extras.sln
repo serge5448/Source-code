@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScanTests", "Scan\ScanTests
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScanPerf", "ScanPerf\ScanPerf.vcxproj", "{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GtcDemo", "GtcDemo\GtcDemo.vcxproj", "{D2CC4560-75BB-4F63-A26D-293967AE00D1}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7731D41A-E8F2-4B20-9A91-464B6366C4F3}"
 	ProjectSection(SolutionItems) = preProject
 		license.txt = license.txt
@@ -44,6 +46,12 @@ Global
 		{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}.Release|Win32.ActiveCfg = Release|Win32
 		{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}.Release|Win32.Build.0 = Release|Win32
 		{4FC250E4-5F46-4D4E-AFD0-A768EDA7CBB6}.Release|x64.ActiveCfg = Release|Win32
+		{D2CC4560-75BB-4F63-A26D-293967AE00D1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D2CC4560-75BB-4F63-A26D-293967AE00D1}.Debug|Win32.Build.0 = Debug|Win32
+		{D2CC4560-75BB-4F63-A26D-293967AE00D1}.Debug|x64.ActiveCfg = Debug|Win32
+		{D2CC4560-75BB-4F63-A26D-293967AE00D1}.Release|Win32.ActiveCfg = Release|Win32
+		{D2CC4560-75BB-4F63-A26D-293967AE00D1}.Release|Win32.Build.0 = Release|Win32
+		{D2CC4560-75BB-4F63-A26D-293967AE00D1}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
