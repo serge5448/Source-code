@@ -1879,8 +1879,11 @@ HRESULT WINAPI DXUTCreateDevice(D3D_FEATURE_LEVEL reqFL,  bool bWindowed, int nS
         OSVERSIONINFOEX osv;
         memset( &osv, 0, sizeof(osv) );
         osv.dwOSVersionInfoSize = sizeof(osv);
+        // GetVersionEx deprecated in VS 2013.
+        #pragma warning( push )
+        #pragma warning( disable: 4996 )
         GetVersionEx( (LPOSVERSIONINFO)&osv );
-        
+        #pragma warning( pop )    
 
         if ( ( osv.dwMajorVersion > 6 )
             || ( osv.dwMajorVersion == 6 && osv.dwMinorVersion >= 1 ) 
@@ -4242,7 +4245,11 @@ void DXUTAllowShortcutKeys( bool bAllowKeys )
             // Set the low-level hook procedure.  Only works on Windows 2000 and above
             OSVERSIONINFO OSVersionInfo;
             OSVersionInfo.dwOSVersionInfoSize = sizeof( OSVersionInfo );
-            GetVersionEx( &OSVersionInfo );
+            // GetVersionEx deprecated in VS 2013.
+            #pragma warning( push )
+            #pragma warning( disable: 4996 )
+            GetVersionExA((OSVERSIONINFOA*)&OSVersionInfo);
+            #pragma warning( pop ) 
             if( OSVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT && OSVersionInfo.dwMajorVersion > 4 )
             {
                 HHOOK hKeyboardHook = SetWindowsHookEx( WH_KEYBOARD_LL, DXUTLowLevelKeyboardProc,

@@ -1114,7 +1114,13 @@ BOOL WINAPI DXUTGetMonitorInfo( HMONITOR hMonitor, LPMONITORINFO lpMonitorInfo )
             OSVERSIONINFOA osvi =
             {
                 0
-            }; osvi.dwOSVersionInfoSize = sizeof( osvi ); GetVersionExA( ( OSVERSIONINFOA* )&osvi );
+            }; 
+            osvi.dwOSVersionInfoSize = sizeof( osvi );
+            // GetVersionEx deprecated in VS 2013.
+            #pragma warning( push )
+            #pragma warning( disable: 4996 )
+            GetVersionExA((OSVERSIONINFOA*)&osvi);
+            #pragma warning( pop )    
             bool bNT = ( VER_PLATFORM_WIN32_NT == osvi.dwPlatformId );
             s_pFnGetMonitorInfo = ( LPGETMONITORINFO )( bNT ? GetProcAddress( hUser32,
                                                                               "GetMonitorInfoW" ) :
