@@ -129,7 +129,17 @@ void TextureCopyExample()
     texture<uint, 2> text3(rows, cols, bitsPerScalarElement);
     copy(uintData.data(), dataSize, text3);
 
+    // Visual Studio 2013 depricates writeonly_texture_view<N, T>. It is replaced with a new 
+    // texture_view<T, N> that implements additional functionality. The following blog post has
+    // additional details:
+    //
+    // http://blogs.msdn.com/b/nativeconcurrency/archive/2013/07/25/overview-of-the-texture-view-design-in-c-amp.aspx
+
+#if (_MSC_VER >= 1800)
+    texture_view<uint, 2> textVw3(text3);
+#else
     writeonly_texture_view<uint, 2> textVw3(text3);
+#endif
     copy(uintData.data(), dataSize, textVw3);
 
     copy(text3, byteData.data(), dataSize);
@@ -224,8 +234,17 @@ void TextureReadingAndWritingExample()
 
     parallel_for_each(outputTx.extent, [&outputTx](index<2> idx) restrict(amp)
     {
-        // outputTx.set(idx, outputTx[idx] + 1);
+        // Visual Studio 2013 depricates writeonly_texture_view<N, T>. It is replaced with a new 
+        // texture_view<T, N> that implements additional functionality. The following blog post has
+        // additional details:
+        //
+        // http://blogs.msdn.com/b/nativeconcurrency/archive/2013/07/25/overview-of-the-texture-view-design-in-c-amp.aspx
+
+#if (_MSC_VER >= 1800)
+        texture_view<int, 2> outputTxVw(outputTx);
+#else
         writeonly_texture_view<int, 2> outputTxVw(outputTx);
+#endif
         outputTxVw.set(idx, outputTx[idx] + 1);
     });
 
@@ -246,7 +265,18 @@ void TextureReadingAndWritingWithViewsExample()
     const int rows = 64;
 
     texture<int_2, 2> text1(rows, cols); 
-    writeonly_texture_view<int_2, 2> textVw(text1); 
+
+    // Visual Studio 2013 depricates writeonly_texture_view<N, T>. It is replaced with a new 
+    // texture_view<T, N> that implements additional functionality. The following blog post has
+    // additional details:
+    //
+    // http://blogs.msdn.com/b/nativeconcurrency/archive/2013/07/25/overview-of-the-texture-view-design-in-c-amp.aspx
+
+#if (_MSC_VER >= 1800)
+    texture_view<int_2, 2> textVw(text1); 
+#else
+    writeonly_texture_view<int_2, 2> textVw(text1);
+#endif
     parallel_for_each(textVw.extent, [textVw] (index<2> idx) restrict(amp) 
     {
         textVw.set(idx, int_2(1, 1)); 
