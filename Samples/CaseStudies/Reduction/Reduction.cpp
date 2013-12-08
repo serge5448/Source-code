@@ -4,7 +4,7 @@
 // C++ AMP: Accelerated Massive Parallelism with Microsoft Visual C++
 //
 //===============================================================================
-// Copyright (c) 2012 Ade Miller & Kate Gregory.  All rights reserved.
+// Copyright (c) 2012-2013 Ade Miller & Kate Gregory.  All rights reserved.
 // This code released under the terms of the 
 // Microsoft Public License (Ms-PL), http://ampbook.codeplex.com/license.
 //
@@ -16,7 +16,7 @@
 
 //  In order to remove code markers from the project comment out the definition below.
 //
-#define MARKERS
+//#define MARKERS
 
 #include <amp.h>
 #include <iostream>

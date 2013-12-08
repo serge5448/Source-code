@@ -4,7 +4,7 @@
 // C++ AMP: Accelerated Massive Parallelism with Microsoft Visual C++
 //
 //===============================================================================
-// Copyright (c) 2012 Ade Miller & Kate Gregory.  All rights reserved.
+// Copyright (c) 2012-2013 Ade Miller & Kate Gregory.  All rights reserved.
 // This code released under the terms of the 
 // Microsoft Public License (Ms-PL), http://ampbook.codeplex.com/license.
 //
@@ -29,9 +29,9 @@
 #include <vector>
 #include <amp.h>
 
-// System Requirements
+// System Requirements:
 //
-// Visual Studio 2012, any edition (the Professional or Ultimate product is required
+// Visual Studio 2012 or 2013, any edition (the Professional or Ultimate product is required
 // to walk through the profiling examples in chapters 7 and 8).
 
 #ifdef MARKERS
