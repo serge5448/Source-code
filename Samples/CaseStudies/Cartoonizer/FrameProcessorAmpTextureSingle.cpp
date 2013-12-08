@@ -24,17 +24,32 @@
 
 using namespace concurrency::direct3d;
 
+// Visual Studio 2013 depricates writeonly_texture_view<N, T>. It is replaced with a new 
+// texture_view<T, N> that implements additional functionality. The following blog post has
+// additional details:
+//
+// http://blogs.msdn.com/b/nativeconcurrency/archive/2013/07/25/overview-of-the-texture-view-design-in-c-amp.aspx
+
 //  Color simplifier
 
 void ApplyColorSimplifier(const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>& destFrame, UINT neighborWindow);
+#if (_MSC_VER >= 1800)
+void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const texture_view<uint_4, 2>& destFrame, index<2> idx, UINT neighborWindow, const float_3& W) restrict(amp);
+#else
 void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const writeonly_texture_view<uint_4, 2>& destFrame, index<2> idx, UINT neighborWindow, const float_3& W) restrict(amp);
+#endif
 
 //  Edge detection.
 
 void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>& destFrame, 
     const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow);
+#if (_MSC_VER >= 1800)
+void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame, const texture_view<uint_4, 2>& destFrame,  
+    const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow, const float_3& W) restrict(amp);
+#else
 void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame, const writeonly_texture_view<uint_4, 2>& destFrame,  
     const texture<uint_4, 2>& orgFrame, UINT simplifierNeighborWindow, const float_3& W) restrict(amp);
+#endif
 void CalculateSobel(const texture<uint_4, 2>& source, index<2> idx, float& dy, float& du, float& dv,  const float_3& W) restrict(amp);
 
 //--------------------------------------------------------------------------------------
@@ -86,8 +101,13 @@ void FrameProcessorAmpTextureSingle::ConfigureFrameBuffers(const Gdiplus::Bitmap
         return std::make_shared<texture<uint_4, 2>>(int(m_height), int(m_width), 8u, 
             m_accelerator.default_view); 
     });
+#if (_MSC_VER >= 1800)
+    m_originalFrameView = std::unique_ptr<texture_view<uint_4, 2>>(
+        new texture_view<uint_4, 2>(*m_frames[kOriginal].get()));
+#else
     m_originalFrameView = std::unique_ptr<writeonly_texture_view<uint_4, 2>>(
         new writeonly_texture_view<uint_4, 2>(*m_frames[kOriginal].get()));
+#endif
 }
 
 //--------------------------------------------------------------------------------------
@@ -103,7 +123,11 @@ void ApplyColorSimplifier(const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>
 {
     const float_3 W(ImageUtils::W);
 
+#if (_MSC_VER >= 1800)
+    texture_view<uint_4, 2> destView(destFrame);
+#else
     writeonly_texture_view<uint_4, 2> destView(destFrame);
+#endif
     extent<2> computeDomain(srcFrame.extent - extent<2>(neighborWindow, neighborWindow));
     parallel_for_each(computeDomain, [=, &srcFrame](index<2> idx) restrict(amp)
     {
@@ -111,8 +135,11 @@ void ApplyColorSimplifier(const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>
     });
 }
 
+#if (_MSC_VER >= 1800)
+#else
 void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const writeonly_texture_view<uint_4, 2>& destFrame, index<2> idx, 
     UINT neighborWindow, const float_3& W) restrict(amp)
+#endif
 {
     const int shift = neighborWindow / 2;
     float sum = 0;
@@ -172,8 +199,10 @@ void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame,
     const float a0 = 0.3f;
     const float a1 = 0.7f;
     extent<2> ext(srcFrame.extent - extent<2>(simplifierNeighborWindow, simplifierNeighborWindow));
-
+#if (_MSC_VER >= 1800)
+#else
     writeonly_texture_view<uint_4, 2> destView(destFrame);
+#endif
     extent<2> computeDomain(ext - extent<2>(FrameProcessorAmp::EdgeBorderWidth, FrameProcessorAmp::EdgeBorderWidth));
     parallel_for_each(computeDomain, 
         [=, &srcFrame, &orgFrame](index<2> idx) restrict(amp) 
@@ -182,9 +211,12 @@ void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame,
     });
 }
 
+#if (_MSC_VER >= 1800)
+#else
 void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame, 
     const writeonly_texture_view<uint_4, 2>& destFrame, const texture<uint_4, 2>& orgFrame, 
     UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
+#endif
 {
     const float alpha = 0.3f;       // Weighting of original frame for edge detection
     const float beta = 0.8f;        // Weighting of source (color simplified) frame for edge detection

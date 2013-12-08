@@ -22,14 +22,14 @@
     <ProjectGuid>{E41D2707-477A-4A1F-8D3E-65513F8B152E}</ProjectGuid>
     <RootNamespace>ImagePipeline</RootNamespace>
     <Keyword>MFCProj</Keyword>
-    <VCTargetsPath Condition="'$(VCTargetsPath11)' != '' and '$(VSVersion)' == '' and $(VisualStudioVersion) == ''">$(VCTargetsPath11)</VCTargetsPath>
+    <VCTargetsPath Condition="'$(VCTargetsPath12)' != '' and '$(VSVersion)' == '' and $(VisualStudioVersion) == ''">$(VCTargetsPath12)</VCTargetsPath>
     <SccProjectName>SAK</SccProjectName>
     <SccAuxPath>SAK</SccAuxPath>
     <SccLocalPath>SAK</SccLocalPath>
     <SccProvider>SAK</SccProvider>
     <ProjectName>Cartoonizer_VS13</ProjectName>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath11)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VCTargetsPath12)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -60,7 +60,7 @@
     <UseOfMfc>Dynamic</UseOfMfc>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath11)\Microsoft.Cpp.props" />
+  <Import Project="$(VCTargetsPath12)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
