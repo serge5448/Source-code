@@ -37,7 +37,11 @@ class FrameProcessorAmpTextureSingle : public IFrameProcessor
 private:
     accelerator m_accelerator;
     std::array<std::shared_ptr<texture<uint_4, 2>>, 3> m_frames;
+#if (_MSC_VER >= 1800)
+    std::unique_ptr<texture_view<uint_4, 2>> m_originalFrameView;
+#else
     std::unique_ptr<writeonly_texture_view<uint_4, 2>> m_originalFrameView;
+#endif
     UINT m_height;
     UINT m_width;
 

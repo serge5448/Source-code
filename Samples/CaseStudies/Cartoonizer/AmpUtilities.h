@@ -93,6 +93,10 @@ inline bool IsWindows8()
     OSVERSIONINFO verInfo;
     ZeroMemory(&verInfo, sizeof(OSVERSIONINFO));
     verInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    // GetVersionEx deprecated in VS 2013.
+    #pragma warning (push)
+    #pragma warning (disable: 4996)
     GetVersionEx(&verInfo);
+    #pragma warning (pop)
     return (verInfo.dwMajorVersion >= 6) && (verInfo.dwMinorVersion >= 2);
 }

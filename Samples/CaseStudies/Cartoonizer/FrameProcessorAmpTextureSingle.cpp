@@ -136,6 +136,8 @@ void ApplyColorSimplifier(const texture<uint_4, 2>& srcFrame, texture<uint_4, 2>
 }
 
 #if (_MSC_VER >= 1800)
+void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const texture_view<uint_4, 2>& destFrame, index<2> idx, 
+    UINT neighborWindow, const float_3& W) restrict(amp)
 #else
 void SimplifyIndex(const texture<uint_4, 2>& srcFrame, const writeonly_texture_view<uint_4, 2>& destFrame, index<2> idx, 
     UINT neighborWindow, const float_3& W) restrict(amp)
@@ -200,6 +202,7 @@ void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame,
     const float a1 = 0.7f;
     extent<2> ext(srcFrame.extent - extent<2>(simplifierNeighborWindow, simplifierNeighborWindow));
 #if (_MSC_VER >= 1800)
+    texture_view<uint_4, 2> destView(destFrame);
 #else
     writeonly_texture_view<uint_4, 2> destView(destFrame);
 #endif
@@ -212,6 +215,9 @@ void ApplyEdgeDetection(const texture<uint_4, 2>& srcFrame,
 }
 
 #if (_MSC_VER >= 1800)
+void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame, 
+    const texture_view<uint_4, 2>& destFrame, const texture<uint_4, 2>& orgFrame, 
+    UINT simplifierNeighborWindow, const float_3& W) restrict(amp)
 #else
 void DetectEdge(index<2> idx, const texture<uint_4, 2>& srcFrame, 
     const writeonly_texture_view<uint_4, 2>& destFrame, const texture<uint_4, 2>& orgFrame, 
