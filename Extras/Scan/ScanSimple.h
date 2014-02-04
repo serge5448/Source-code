@@ -41,7 +41,7 @@ namespace Extras
     template <typename T>
     void ExclusiveScanSimple(concurrency::array_view<T, 1> input, concurrency::array_view<T, 1> output)
     {
-		details::ScanSimple<details::kExclusive>(input, output);
+        details::ScanSimple<details::kExclusive>(input, output);
     }
 
     //===============================================================================
@@ -64,7 +64,7 @@ namespace Extras
     template <typename T>
     void InclusiveScanSimple(concurrency::array_view<T, 1> input, concurrency::array_view<T, 1> output)
     {
-		details::ScanSimple<details::kInclusive>(input, output);
+        details::ScanSimple<details::kInclusive>(input, output);
     }
 
     //===============================================================================

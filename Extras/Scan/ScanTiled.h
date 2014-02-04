@@ -34,14 +34,14 @@ namespace Extras
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
         copy(first, last, in);      
-		details::ScanTiled<TileSize, details::kExclusive>(concurrency::array_view<T, 1>(in), concurrency::array_view<T, 1>(out));
+        details::ScanTiled<TileSize, details::kExclusive>(concurrency::array_view<T, 1>(in), concurrency::array_view<T, 1>(out));
         copy(out, outFirst);
     }
 
     template <int TileSize, typename T>
     void ExclusiveScanTiled(concurrency::array_view<T, 1> input, concurrency::array_view<T, 1> output)
     {
-		details::ScanTiled<TileSize, details::kExclusive>(input, output);
+        details::ScanTiled<TileSize, details::kExclusive>(input, output);
     }
 
     //===============================================================================
@@ -64,7 +64,7 @@ namespace Extras
     template <int TileSize, typename T>
     inline void InclusiveScanTiled(concurrency::array_view<T, 1> input, concurrency::array_view<T, 1> output)
     {
-		details::ScanTiled<TileSize, details::kInclusive>(input, output);
+        details::ScanTiled<TileSize, details::kInclusive>(input, output);
     }
 
     //===============================================================================

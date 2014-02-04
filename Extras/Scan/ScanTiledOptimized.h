@@ -35,8 +35,8 @@ namespace Extras
         const int size = int(distance(first, last));
         concurrency::array<T, 1> in(size);
         concurrency::array<T, 1> out(size);
-        copy(first, last, in);   
-		details::ScanOptimized<TileSize, details::kExclusive>(concurrency::array_view<T, 1>(in), concurrency::array_view<T, 1>(out));
+        copy(first, last, in);
+        details::ScanOptimized<TileSize, details::kExclusive>(concurrency::array_view<T, 1>(in), concurrency::array_view<T, 1>(out));
         copy(out, outFirst);
     }
 
