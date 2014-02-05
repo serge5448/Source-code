@@ -73,14 +73,13 @@ namespace Extras
 
     namespace details
     {
-        // Inclusive
         template <int Mode, typename T>
         void ScanSimple(concurrency::array_view<T, 1> input, concurrency::array_view<T, 1> output)
         {
             assert(input.extent[0] == output.extent[0]);
-            for (int offset = 1; offset < input.extent[0]; offset *= 2)
+            int offset;
+            for (offset = 1; offset < input.extent[0]; offset *= 2)
             {
-                assert(input.extent[0] == output.extent[0]);
                 assert(input.extent[0] % 2 == 0);
                 output.discard_data();
                 parallel_for_each(input.extent, [=](concurrency::index<1> idx) restrict (amp)
@@ -92,16 +91,21 @@ namespace Extras
                 });
                 std::swap(input, output);
             }
-            // TODO: Is this a better way to do this.
-            if (Mode == details::kInclusive)
-                return;
 
-            parallel_for_each(output.extent, [=] (concurrency::index<1> idx) restrict (amp) 
+            // Unwrap the last iteration of the loop to fix up the offsets for inclusive/exclusive scans.
+
+            assert(input.extent[0] % 2 == 0);
+            output.discard_data();
+            const int shift = (Mode == kExclusive) ? 1 : 0;
+            const concurrency::extent<1> compute_domain(input.extent[0] - shift);
+            parallel_for_each(compute_domain, [=](concurrency::index<1> idx) restrict(amp)
             {
-                if (idx[0] == 0)
-                    output[idx] = T(0);
+                if (idx[0] >= offset)
+                    output[idx + shift] = input[idx] + input[idx - offset];
                 else
-                    output[idx] = input[idx - 1];
+                    output[idx + shift] = input[idx];
+                if (Mode == kExclusive)
+                    output[0] = T(0);
             });
             std::swap(input, output);
         }

@@ -103,6 +103,18 @@ namespace ScanTests
             Assert::IsTrue(expected == result, Msg(expected, result).c_str());
         }
 
+        TEST_METHOD(ExclusiveScanSimpleTests_Large)
+        {
+            std::vector<int> input(2048, 1);
+            std::vector<int> result(input.size());
+            std::vector<int> expected(input.size());
+            std::iota(begin(expected), end(expected), 0);
+
+            ExclusiveScanSimple(begin(input), end(input), result.begin());
+
+            Assert::IsTrue(expected == result, Msg(expected, result).c_str());
+        }
+
         TEST_METHOD(InclusiveScanSimpleTests_Simple)
         {
             std::vector<int> input(8, 1);
@@ -127,7 +139,7 @@ namespace ScanTests
             Assert::IsTrue(exp == result, Msg(exp, result).c_str());
         }
 
-        TEST_METHOD(InclusiveScanTests_Large)
+        TEST_METHOD(InclusiveScanSimpleTests_Large)
         {
             std::vector<int> input(2048, 1);
             std::vector<int> result(input.size());
