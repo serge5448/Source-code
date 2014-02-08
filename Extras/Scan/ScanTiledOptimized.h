@@ -82,7 +82,7 @@ namespace Extras
         };
 
         template <int BlockSize, int LogBlockSize>
-        inline int ConflictFreeOffset(int n) restrict(amp)
+        inline int ConflictFreeOffset(const int n) restrict(amp)
         {
             return n >> BlockSize + n >> (2 * LogBlockSize);
         }
@@ -92,7 +92,7 @@ namespace Extras
         // http.developer.nvidia.com/GPUGems3/gpugems3_ch39.html
 
         template <int TileSize, int Mode, typename T>  
-        void ScanOptimized(concurrency::array_view<T, 1> input, concurrency::array_view<T, 1> output)
+        void ScanOptimized(const concurrency::array_view<T, 1>& input, concurrency::array_view<T, 1>& output)
         {
             const int domainSize = TileSize * 2;
             const int elementCount = input.extent[0];
@@ -124,7 +124,9 @@ namespace Extras
         }
 
         template <int TileSize, int Mode, typename T>
-        void ComputeTilewiseExclusiveScanOptimized(concurrency::array_view<const T, 1> input, concurrency::array_view<T> tilewiseOutput, concurrency::array_view<T, 1> tileSums)
+        void ComputeTilewiseExclusiveScanOptimized(const concurrency::array_view<const T, 1>& input, 
+            concurrency::array_view<T>& tilewiseOutput, 
+            concurrency::array_view<T, 1>& tileSums)
         {
             static const int domainSize = TileSize * 2;
             const int elementCount = input.extent[0];
@@ -132,6 +134,7 @@ namespace Extras
             const int threadCount = tileCount * TileSize;
 
             tilewiseOutput.discard_data();
+            tileSums.discard_data();
             parallel_for_each(concurrency::extent<1>(threadCount).tile<TileSize>(), [=](concurrency::tiled_index<TileSize> tidx) restrict(amp) 
             {
                 const int tid = tidx.local[0];
@@ -146,6 +149,7 @@ namespace Extras
                     tileData[tidx2] = input[gidx2];
                     tileData[tidx2 + 1] = input[gidx2 + 1];
                 }
+
                 // Up sweep (reduce) phase.
 
                 int offset = 1;
@@ -198,7 +202,6 @@ namespace Extras
                     // For inclusive scan calculate the last value
                     if (Mode == details::kInclusive)
                         tilewiseOutput[gidx2 + 1] = tileData[domainSize - 1] + input[gidx2 + 1];
-                    
                     tileSums[tidx.tile[0]] = tileData[domainSize - 1] + input[gidx2 + 1];
                 }
             });

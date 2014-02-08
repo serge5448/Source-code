@@ -74,7 +74,7 @@ namespace Extras
     namespace details
     {
         template <int Mode, typename T>
-        void ScanSimple(concurrency::array_view<T, 1> input, concurrency::array_view<T, 1> output)
+        void ScanSimple(concurrency::array_view<T, 1>& input, concurrency::array_view<T, 1>& output)
         {
             assert(input.extent[0] == output.extent[0]);
             int offset;

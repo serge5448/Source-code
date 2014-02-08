@@ -74,12 +74,12 @@ int _tmain(int argc, _TCHAR* argv[])
     const size_t elementCount = 1024;
     const int tileSize = 64;
 #else
-    const size_t elementCount = 4 * 1024 * 1024;
-    const int tileSize = 128;
+    const size_t elementCount = 2 * 1024 * 1024;
+    const int tileSize = 64;
 #endif
 
     // Make sure that elements can be split into tiles so the number of
-    // tiles in any dimension is less than 65536. 
+    // tiles less than 65536. 
     static_assert((elementCount / tileSize < 65536), 
         "Workload is too large or tiles are too small. This will cause runtime errors.");
     static_assert((elementCount != 0), "Number of elements cannot be zero.");
