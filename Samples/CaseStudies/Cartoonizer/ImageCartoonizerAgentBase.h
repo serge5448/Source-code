@@ -75,7 +75,7 @@ protected:
 
             //  Process the image and update the ImageInfo.
 
-            processor->ProcessImage(originalImage, processedImage, 
+            processor->ProcessImage(originalImage, processedImage,
                                     GetPhases(settings), GetNeighborWindow(settings));
             pInfo->SetBitmap(outBitmap);
 

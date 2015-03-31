@@ -27,6 +27,11 @@ class FrameProcessorCpuSingle : public FrameProcessorCpuBase, public IFrameProce
     void ProcessImage(const Gdiplus::BitmapData& srcFrame, Gdiplus::BitmapData& destFrame, 
         UINT phases, UINT neighborWindow)
     {
+        assert(srcFrame.Height == destFrame.Height);
+        assert(srcFrame.Stride == destFrame.Stride);
+        assert(phases > 0);
+        assert(neighborWindow > 0);
+
         ConfigureFrameBuffers(srcFrame);
 
         //  Process the image. After each step swap the frame buffer indices.
@@ -47,9 +52,6 @@ class FrameProcessorCpuSingle : public FrameProcessorCpuBase, public IFrameProce
         ApplyEdgeDetectionSingle(*m_frames[current].get(), destFrame, srcFrame,
             shift, shift, (srcFrame.Width - shift), (srcFrame.Height - shift));
 
-        //  Copy the resulting image into the destination frame.
-
-        for (int i = 0; i < kBufSize; ++i)
-            m_bitmaps[i]->UnlockBits(m_frames[i].get());
+        ReleaseFrameBuffers();
     }
 };

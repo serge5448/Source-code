@@ -115,13 +115,13 @@ void ApplyColorSimplifierTiledHelper(const array<ArgbPackedPixel, 2>& srcFrame, 
         SimplifyIndexTiled(srcFrame, destFrame, idx, neighborWindow, W);
     });
 }
-    
+
 void SimplifyIndex(const array<ArgbPackedPixel, 2>& srcFrame, array<ArgbPackedPixel, 2>& destFrame, index<2> idx, 
                    UINT neighborWindow, const float_3& W) restrict(amp)
 {
     const int shift = neighborWindow / 2;
     float sum = 0;
-    float_3 partialSum;
+    float_3 partialSum(0.0f, 0.0f,0.0f);
     const float standardDeviation = 0.025f;
     // k is the exponential decay constant and is calculated from a standard deviation of 0.025
     const float k = -0.5f / (standardDeviation * standardDeviation);

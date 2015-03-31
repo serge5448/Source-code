@@ -32,6 +32,7 @@ protected:
     UINT m_width;
 
     void ConfigureFrameBuffers(const Gdiplus::BitmapData& srcFrame);
+    void FrameProcessorCpuBase::ReleaseFrameBuffers();
 
     //  Color simplifier.
 

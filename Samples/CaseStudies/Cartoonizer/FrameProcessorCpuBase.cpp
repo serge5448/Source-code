@@ -53,7 +53,22 @@ void FrameProcessorCpuBase::ConfigureFrameBuffers(const Gdiplus::BitmapData& src
             PixelFormat32bppARGB,
             m_frames[i].get());
         assert(st == Gdiplus::Ok);
-        memcpy_s(m_frames[i]->Scan0, m_frames[i]->Height * m_frames[i]->Stride, srcFrame.Scan0, m_height * srcFrame.Stride);
+    }
+    auto frameMemSize = m_height * srcFrame.Stride;
+    memcpy_s(m_frames[kCurrent]->Scan0, frameMemSize, srcFrame.Scan0, frameMemSize);
+#if defined(_DEBUG)
+    memset(m_frames[kNext]->Scan0, 0, m_frames[0]->Height * m_frames[0]->Stride);
+#endif
+}
+
+void FrameProcessorCpuBase::ReleaseFrameBuffers()
+{
+    for (int i = 0; i < kBufSize; ++i)
+    {
+#if defined(_DEBUG)
+        memset(m_frames[i]->Scan0, 0, m_frames[i]->Height * m_frames[i]->Stride);
+#endif
+        m_bitmaps[i]->UnlockBits(m_frames[i].get());
     }
 }
 
@@ -102,7 +117,7 @@ void FrameProcessorCpuBase::SimplifyIndex(const Gdiplus::BitmapData& srcFrame, G
     // k is the exponential decay constant and is calculated from a standard deviation of 0.025
     const float k = -0.5f / (standardDeviation * standardDeviation);
 
-    for(int y = (idxY - shift); y <= (idxY + shift); ++y)
+    for (int y = (idxY - shift); y <= (idxY + shift); ++y)
         for (int x = (idxX - shift); x <= (idxX + shift); ++x)
         {
             if (x == idxX && y == idxY) // don't apply filter to the requested index, only to the neighbors
@@ -156,7 +171,7 @@ void FrameProcessorCpuBase::ApplyEdgeDetectionSingle(const Gdiplus::BitmapData& 
             float i = (1 - beta) * ImageUtils::SmoothStep(s0, s1, edgeS) + beta * ImageUtils::SmoothStep(a0, a1, edgeA);
 
             float oneMinusi = 1 - i;
-            COLORREF srcClr = BitmapUtils::GetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp);
+            COLORREF srcClr = BitmapUtils::GetPixel(static_cast<byte*>(srcFrame.Scan0), x, y, srcFrame.Stride, bpp);
             COLORREF destClr = RGB(GetRValue(srcClr) * oneMinusi, GetGValue(srcClr) * oneMinusi, GetBValue(srcClr) * oneMinusi);
             BitmapUtils::SetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp, destClr);            
         }
@@ -190,9 +205,9 @@ void FrameProcessorCpuBase::ApplyEdgeDetectionMulti(const Gdiplus::BitmapData& s
             float i = (1 - beta) * ImageUtils::SmoothStep(s0, s1, edgeS) + beta * ImageUtils::SmoothStep(a0, a1, edgeA);
 
             float oneMinusi = 1 - i;
-            COLORREF srcClr = BitmapUtils::GetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp);
+            COLORREF srcClr = BitmapUtils::GetPixel(static_cast<byte*>(srcFrame.Scan0), x, y, srcFrame.Stride, bpp);
             COLORREF destClr = RGB(GetRValue(srcClr) * oneMinusi, GetGValue(srcClr) * oneMinusi, GetBValue(srcClr) * oneMinusi);
-            BitmapUtils::SetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp, destClr);            
+            BitmapUtils::SetPixel(static_cast<byte*>(destFrame.Scan0), x, y, destFrame.Stride, bpp, destClr);
         }
     });
 }
@@ -207,8 +222,8 @@ void FrameProcessorCpuBase::CalculateSobel(const Gdiplus::BitmapData& srcFrame, 
 
     // Gx is the matrix used to calculate the horizontal gradient of image
     // Gy is the matrix used to calculate the vertical gradient of image
-    int gx[3][3] = { { -1, 0, 1 }, { -2, 0, 2 }, { -1, 0, 1 } };    //  The matrix Gx
-    int gy[3][3] = { { 1, 2, 1 }, { 0, 0, 0 }, { -1, -2, -1 } };    //  The matrix Gy
+    int gx[3][3] = { { -1, 0, 1 }, { -2, 0, 2 }, { -1, 0, 1 } };        //  The matrix Gx
+    int gy[3][3] = { {  1, 2, 1 }, {  0, 0, 0 }, { -1, -2, -1 } };      //  The matrix Gy
 
     float new_yX = 0, new_yY = 0;
     float new_uX = 0, new_uY = 0;

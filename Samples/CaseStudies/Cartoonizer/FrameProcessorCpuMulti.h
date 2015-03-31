@@ -24,8 +24,15 @@
 
 class FrameProcessorCpuMulti : public FrameProcessorCpuBase, public IFrameProcessor
 {
-    void ProcessImage(const Gdiplus::BitmapData& srcFrame, Gdiplus::BitmapData& destFrame, UINT phases, UINT neighborWindow)
+    void ProcessImage(const Gdiplus::BitmapData& srcFrame, 
+        Gdiplus::BitmapData& destFrame,
+        UINT phases, UINT neighborWindow)
     {
+        assert(srcFrame.Height == destFrame.Height);
+        assert(srcFrame.Stride == destFrame.Stride);
+        assert(phases > 0);
+        assert(neighborWindow > 0);
+
         ConfigureFrameBuffers(srcFrame);
 
         //  Process the image. After each step swap the frame buffer indices.
@@ -33,7 +40,7 @@ class FrameProcessorCpuMulti : public FrameProcessorCpuBase, public IFrameProces
         int current = kCurrent;
         int next = kNext;
         UINT shift = neighborWindow / 2;
-
+     
         for (UINT i = 0; i < phases; ++i)
         {
             ApplyColorSimplifierMulti(*m_frames[current].get(), *m_frames[next].get(), neighborWindow, 
@@ -45,9 +52,6 @@ class FrameProcessorCpuMulti : public FrameProcessorCpuBase, public IFrameProces
         ApplyEdgeDetectionMulti(*m_frames[current].get(), destFrame, srcFrame,
             shift, shift, (srcFrame.Width - shift), (srcFrame.Height - shift));
 
-        //  Copy the resulting image into the destination frame.
-
-        for (int i = 0; i < kBufSize; ++i)
-            m_bitmaps[i]->UnlockBits(m_frames[i].get());
+        ReleaseFrameBuffers();
     }
 };
